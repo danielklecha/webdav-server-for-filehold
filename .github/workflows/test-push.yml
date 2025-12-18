@@ -2,9 +2,11 @@ name: Test on Push
 
 on:
   push:
-    branches-ignore:
+    branches:
       - 'main'
-      - 'master'
+
+permissions:
+  contents: read
 
 jobs:
   test:

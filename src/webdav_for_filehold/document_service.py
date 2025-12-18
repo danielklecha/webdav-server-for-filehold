@@ -23,15 +23,13 @@ DEFAULT_CHUNK_SIZE = 1024 * 1024  # 1MB
 
 
 
-class DocumentWithFields:
-    def __init__(self, columns: Any, document_data: List[Any]):
-        self.Columns = columns
-        self.DocumentData = document_data
+from .columns_with_values import ColumnsWithValues
 
 
 class DocumentService:
     @staticmethod
     def get_documents_with_fields(session_id: str, base_url: str, folder_id: int) -> Tuple[str, Any]:
+
         """
         Retrieves a list of documents in a folder, including selected metadata fields.
 
@@ -41,7 +39,7 @@ class DocumentService:
             folder_id: The ID of the folder to search.
 
         Returns:
-            A tuple containing the snapshot ID and the result object (List[DocumentWithFields]).
+            A tuple containing the snapshot ID and the result object (List[ColumnsWithValues]).
         """
         try:
             doc_client = ClientFactory.get_document_finder_client(session_id, base_url)
@@ -104,10 +102,10 @@ class DocumentService:
 
             results_list = []
             if all_document_data:
-                # Create list of DocumentWithFields
+                # Create list of ColumnsWithValues
                 all_columns = result.Columns if result.Columns else []
                 for doc_data in all_document_data:
-                    results_list.append(DocumentWithFields(all_columns, [doc_data]))
+                    results_list.append(ColumnsWithValues(all_columns, [doc_data]))
                 
                 DocumentService._process_duplicates(results_list)
 
@@ -178,10 +176,10 @@ class DocumentService:
         return f"{name} {suffix}"
 
     @staticmethod
-    def _process_duplicates(results_list: List[DocumentWithFields]) -> None:
+    def _process_duplicates(results_list: List[ColumnsWithValues]) -> None:
         """
         Detects duplicate document names and appends a suffix (e.g. ' (1)') to disambiguate them.
-        This modifies the 'DocumentData' inside DocumentWithFields in-place.
+        This modifies the 'DocumentData' inside ColumnsWithValues in-place.
         """
         grouped = {}
         all_keys = set()
@@ -480,7 +478,7 @@ class DocumentService:
         return fields_with_values
 
     @staticmethod
-    def replace_document_content(environ: Dict, document_data: DocumentWithFields, file_name: str, file_size: int, folder_object: Any, upload_token: str) -> bool:
+    def replace_document_content(environ: Dict, document_data: ColumnsWithValues, file_name: str, file_size: int, folder_object: Any, upload_token: str) -> bool:
         """
         Checks out an existing document, uploads new content, and checks it in as a new version.
         """
@@ -500,7 +498,7 @@ class DocumentService:
         fields = document_data.Columns.FieldDefinition if document_data.Columns else []
         
         if not doc_data:
-            raise Exception("No document data found in DocumentWithFields")
+            raise Exception("No document data found in ColumnsWithValues")
 
         # Checkout if needed
         DocumentService._perform_checkout_logic(doc_finder, document_manager_client, doc_data)
@@ -707,7 +705,7 @@ class DocumentService:
         if not result:
             return []
 
-        # Assuming result is now a List[DocumentWithFields] or similar structure where we can access Columns
+        # Assuming result is now a List[ColumnsWithValues] or similar structure where we can access Columns
         first_item = result[0] if result else None
         
         name_col_index = -1
