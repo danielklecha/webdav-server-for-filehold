@@ -118,6 +118,7 @@ class TestVirtualFolder(unittest.TestCase):
         mock_result.DocumentValues.DocumentData = [doc_data]
 
         mock_doc_client.service.GetDocumentsWithFields.return_value.GetDocumentsWithFieldsResult = mock_result
+        mock_doc_client.service.GetSnapshotDocumentCount.return_value = 1
 
         with patch('webdav_for_filehold.client_factory.ClientFactory.get_document_finder_client') as mock_get_client:
             mock_get_client.return_value = mock_doc_client
@@ -336,6 +337,7 @@ class TestVirtualFolder(unittest.TestCase):
         mock_result.DocumentValues.DocumentData = [d1, d2]
 
         mock_doc_client.service.GetDocumentsWithFields.return_value.GetDocumentsWithFieldsResult = mock_result
+        mock_doc_client.service.GetSnapshotDocumentCount.return_value = 2
 
         with patch('webdav_for_filehold.client_factory.ClientFactory.get_document_finder_client') as mock_get_client:
             mock_get_client.return_value = mock_doc_client
@@ -362,8 +364,8 @@ class TestVirtualFolder(unittest.TestCase):
                     if m.path.endswith("/Doc.txt"):
                         self.assertEqual(m.get_display_name(), "Doc.txt")
                         found_clean = True
-                    elif m.path.endswith("/Doc (2).txt"):
-                        self.assertEqual(m.get_display_name(), "Doc (2).txt")
+                    elif m.path.endswith("/Doc (1).txt"):
+                        self.assertEqual(m.get_display_name(), "Doc (1).txt")
                         found_suffix = True
 
                 self.assertTrue(found_clean)

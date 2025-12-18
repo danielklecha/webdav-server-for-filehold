@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Tuple, Union
 
@@ -19,7 +20,7 @@ from .download_stream import DownloadStream
 logger = logging.getLogger(__name__)
 
 ZERO_GUID = "00000000-0000-0000-0000-000000000000"
-DEFAULT_CHUNK_SIZE = 1024 * 1024  # 1MB
+DEFAULT_CHUNK_SIZE = 50 * 1024 * 1024  # 50MB
 
 
 
@@ -611,7 +612,10 @@ class DocumentService:
         fields_with_values = []
         if details.Columns and details.Columns.FieldDefinition and details.DocumentValues:
             columns = details.Columns.FieldDefinition
-            doc_value_data = details.DocumentValues[0]
+            vals = details.DocumentValues
+            if hasattr(vals, 'DocumentData') and not isinstance(vals, list):
+                vals = vals.DocumentData
+            doc_value_data = vals[0]
             
             data_columns = getattr(doc_value_data.DataColumns, 'anyType', []) if doc_value_data.DataColumns else []
             

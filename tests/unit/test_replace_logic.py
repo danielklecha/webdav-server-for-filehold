@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 from webdav_for_filehold.document_service import DocumentService
 
 class TestReplaceLogic(unittest.TestCase):
@@ -21,14 +21,17 @@ class TestReplaceLogic(unittest.TestCase):
         field_def.SystemFieldId = -4
         mock_fields_wrapper.FieldDefinition = [field_def]
         
-        with patch.object(DocumentService, '_get_search_columns', return_value=mock_fields_wrapper):
+        with patch.object(DocumentService, '_get_search_columns', return_value=mock_fields_wrapper), \
+             patch('webdav_for_filehold.document_service.DocumentService._create_single_document_selection', return_value='sel1'):
              # Act
-             result_soap, result_fields = DocumentService._perform_checkout_logic(doc_client, doc_manager, soap_object)
+             DocumentService._perform_checkout_logic(doc_client, doc_manager, soap_object)
              
              # Assert
-             self.assertEqual(result_soap, soap_object)
-             self.assertEqual(result_fields, mock_fields_wrapper.FieldDefinition)
-             doc_manager.service.CheckOutDocument.assert_called_with(123)
+             # Verify check out happened
+             doc_manager.service.CheckOutDocuments.assert_called_with('sel1', True)
+             # Verify in-place update
+             self.assertEqual(soap_object.CanCheckOut, False)
+             self.assertEqual(soap_object.IsCheckedOutByMe, True)
 
     def test_replace_document_content_flow(self):
         # Setup
@@ -38,6 +41,11 @@ class TestReplaceLogic(unittest.TestCase):
         document_data.CheckedOutBy = 0
         document_data.CanCheckOut = True
         
+        # Wrap doc data
+        doc_wrapper = MagicMock()
+        doc_wrapper.DocumentData = [document_data]
+        doc_wrapper.Columns = MagicMock()
+
         file_name = "test.txt"
         file_size = 100
         folder_object = MagicMock()
@@ -51,20 +59,20 @@ class TestReplaceLogic(unittest.TestCase):
             mock_finder = mock_finder_fac.return_value
             mock_manager = mock_manager_fac.return_value
             
-            # _perform_checkout_logic returns (soap_object, fields)
-            mock_perform_checkout.return_value = (document_data, [])
+            # _perform_checkout_logic returns None
+            mock_perform_checkout.return_value = None
             
             # mock DDS
             mock_dds.get_original_file_name_with_extension.return_value = "test.txt"
             mock_dds.get_original_file_name.return_value = "test"
             
             # Act
-            result = DocumentService.replace_document_content(environ, document_data, file_name, file_size, folder_object, upload_token)
+            result = DocumentService.replace_document_content(environ, doc_wrapper, file_name, file_size, folder_object, upload_token)
             
             # Assert
             self.assertTrue(result)
             
-            # Verify _perform_checkout_logic called with document_data
+            # Verify _perform_checkout_logic called with document_data (internal item)
             mock_perform_checkout.assert_called_with(mock_finder, mock_manager, document_data)
             
             # Verify CheckIn
