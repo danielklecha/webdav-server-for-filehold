@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 try:
     from zoneinfo import ZoneInfo
@@ -12,10 +12,11 @@ except ImportError:
 import requests
 
 from .client_factory import ClientFactory
-from .utils import sanitize_name
+from .columns_with_values import ColumnsWithValues
 from .document_data_service import DocumentDataService
-from .field_definition import FieldDefinition
 from .download_stream import DownloadStream
+from .field_definition import FieldDefinition
+from .utils import sanitize_name
 
 logger = logging.getLogger(__name__)
 
@@ -23,14 +24,11 @@ ZERO_GUID = "00000000-0000-0000-0000-000000000000"
 DEFAULT_CHUNK_SIZE = 50 * 1024 * 1024  # 50MB
 
 
-
-from .columns_with_values import ColumnsWithValues
-
-
 class DocumentService:
     @staticmethod
-    def get_documents_with_fields(session_id: str, base_url: str, folder_id: int) -> Tuple[str, Any]:
-
+    def get_documents_with_fields(
+        session_id: str, base_url: str, folder_id: int
+    ) -> Tuple[str, List[ColumnsWithValues]]:
         """
         Retrieves a list of documents in a folder, including selected metadata fields.
 
@@ -44,13 +42,13 @@ class DocumentService:
         """
         try:
             doc_client = ClientFactory.get_document_finder_client(session_id, base_url)
-            
+
             criteria = DocumentService._build_search_criteria(doc_client, folder_id)
             field_definitions = DocumentService._get_search_columns(doc_client)
 
             page_size = 200
-            
-            getDocumentsWithFieldsResult = doc_client.service.GetDocumentsWithFields(
+
+            initial_result = doc_client.service.GetDocumentsWithFields(
                 prevSnapshotId=ZERO_GUID,
                 snapshotId=ZERO_GUID,
                 viewContainerType="FLD",
@@ -61,53 +59,36 @@ class DocumentService:
                 pageSize=page_size
             )
 
-            result = getDocumentsWithFieldsResult.GetDocumentsWithFieldsResult
-            snapshot_id = getDocumentsWithFieldsResult.snapshotId
-            
-            all_document_data = []
-            if result and result.DocumentValues:
-                vals = result.DocumentValues
-                if hasattr(vals, 'DocumentData') and not isinstance(vals, list):
-                    vals = vals.DocumentData
-                all_document_data.extend(vals)
+            result_obj = initial_result.GetDocumentsWithFieldsResult
+            snapshot_id = initial_result.snapshotId
+
+            all_document_data = DocumentService._extract_document_data(result_obj)
 
             total_count = 0
             try:
                 total_count = doc_client.service.GetSnapshotDocumentCount(snapshot_id)
             except Exception as e:
-                 logger.warning(f"Failed to get snapshot document count: {e}")
-            
-            while len(all_document_data) < total_count:
-                next_batch_result = doc_client.service.GetDocumentsWithFields(
-                    prevSnapshotId=ZERO_GUID,
-                    snapshotId=snapshot_id,
-                    viewContainerType="FLD",
-                    fieldDefinitions=field_definitions,
-                    searchCriteria=criteria,
-                    sortOrder=None,
-                    firstRowIndex=len(all_document_data),
-                    pageSize=page_size
-                )
-                
-                batch_data = next_batch_result.GetDocumentsWithFieldsResult
-                if batch_data and batch_data.DocumentValues:
-                    new_document_data = batch_data.DocumentValues
-                    if hasattr(new_document_data, 'DocumentData') and not isinstance(new_document_data, list):
-                        new_document_data = new_document_data.DocumentData
+                logger.warning(f"Failed to get snapshot document count: {e}")
 
-                    if not new_document_data:
-                        break
-                    all_document_data.extend(new_document_data)
-                else:
-                    break
+            if len(all_document_data) < total_count:
+                more_data = DocumentService._fetch_document_batch(
+                    doc_client,
+                    snapshot_id,
+                    field_definitions,
+                    criteria,
+                    page_size,
+                    len(all_document_data),
+                    total_count
+                )
+                all_document_data.extend(more_data)
 
             results_list = []
             if all_document_data:
                 # Create list of ColumnsWithValues
-                all_columns = result.Columns if result.Columns else []
+                all_columns = result_obj.Columns if result_obj and result_obj.Columns else []
                 for doc_data in all_document_data:
                     results_list.append(ColumnsWithValues(all_columns, [doc_data]))
-                
+
                 DocumentService._process_duplicates(results_list)
 
             return snapshot_id, results_list
@@ -117,8 +98,64 @@ class DocumentService:
             raise e
 
     @staticmethod
+    def _fetch_document_batch(
+        doc_client: Any,
+        snapshot_id: str,
+        field_definitions: Any,
+        criteria: Any,
+        page_size: int,
+        start_index: int,
+        total_count: int
+    ) -> List[Any]:
+        """Fetches remaining documents in batches."""
+        collected_data = []
+        current_index = start_index
+
+        while current_index < total_count:
+            next_batch = doc_client.service.GetDocumentsWithFields(
+                prevSnapshotId=ZERO_GUID,
+                snapshotId=snapshot_id,
+                viewContainerType="FLD",
+                fieldDefinitions=field_definitions,
+                searchCriteria=criteria,
+                sortOrder=None,
+                firstRowIndex=current_index,
+                pageSize=page_size
+            )
+
+            batch_data = DocumentService._extract_document_data(next_batch.GetDocumentsWithFieldsResult)
+            if not batch_data:
+                break
+
+            collected_data.extend(batch_data)
+            current_index += len(batch_data)
+
+        return collected_data
+
+    @staticmethod
+    def _extract_document_data(result_obj: Any) -> List[Any]:
+        """Extracts and normalizes document data from the result object."""
+        if not result_obj or not result_obj.DocumentValues:
+            return []
+
+        vals = result_obj.DocumentValues
+        if hasattr(vals, 'DocumentData') and not isinstance(vals, list):
+            vals = vals.DocumentData
+
+        return vals if vals else []
+
+    @staticmethod
     def _build_search_criteria(doc_client: Any, folder_id: int) -> Dict[str, Any]:
-        """Builds the search criteria for retrieving documents."""
+        """
+        Builds the search criteria for retrieving documents.
+
+        Args:
+            doc_client: The Zeep client for document operations.
+            folder_id: The ID of the folder to search within.
+
+        Returns:
+            A dictionary representing the search criteria.
+        """
         
         def create_condition(search_type_val, operator_val, operands_list):
             wrapped_operands = []
@@ -144,7 +181,15 @@ class DocumentService:
 
     @staticmethod
     def _get_search_columns(doc_client: Any) -> Any:
-        """Defines the columns/fields to retrieve."""
+        """
+        Defines the columns/fields to retrieve from FileHold.
+
+        Args:
+            doc_client: The Zeep client for document operations.
+
+        Returns:
+            An ArrayOfFieldDefinition containing the columns to retrieve.
+        """
         types = doc_client.type_factory('ns0')
         search_columns = [
             FieldDefinition.make_field({'SystemFieldId': -4, 'IsSystem': True, 'MetadataFieldId': 0}),  # DocumentName
@@ -159,6 +204,16 @@ class DocumentService:
     def get_large_chunk_size(session_id: str, base_url: str) -> int:
         """
         Retrieves the large chunk size from the RepositoryController.
+
+        Args:
+            session_id: The user session ID.
+            base_url: The FileHold base URL.
+
+        Returns:
+            The configured large chunk size in bytes.
+
+        Raises:
+            Exception: If the call fails.
         """
         try:
             client = ClientFactory.get_repository_controller_client(session_id, base_url)
@@ -170,7 +225,17 @@ class DocumentService:
 
     @staticmethod
     def _insert_suffix(name: str, suffix: str, is_file: bool = True) -> str:
-        """Inserts a suffix into a filename (before extension) or a string."""
+        """
+        Inserts a suffix into a filename (before extension) or a string.
+
+        Args:
+            name: The original name.
+            suffix: The suffix to insert.
+            is_file: True if the name is a filename with an extension.
+
+        Returns:
+             The modified name with the suffix.
+        """
         if is_file:
             base, ext = os.path.splitext(name)
             return f"{base} {suffix}{ext}"
@@ -234,9 +299,26 @@ class DocumentService:
                         suffix_index += 1
 
     @staticmethod
-    def download_document(session_id: str, base_url: str, metadata_version_id: int, file_size: Optional[int] = None) -> Tuple[DownloadStream, int]:
+    def download_document(
+        session_id: str,
+        base_url: str,
+        metadata_version_id: int,
+        file_size: Optional[int] = None
+    ) -> Tuple[DownloadStream, int]:
         """
         Prepares a document for download and returns the raw file stream and size.
+
+        Args:
+            session_id: The user session ID.
+            base_url: The FileHold base URL.
+            metadata_version_id: The metadata version ID of the document.
+            file_size: Optional known file size to avoid extra calls.
+
+        Returns:
+             A tuple containing the DownloadStream and the file size.
+
+        Raises:
+             Exception: If preparation fails.
         """
         try:
             client = ClientFactory.get_document_manager_client(session_id, base_url)
@@ -286,9 +368,20 @@ class DocumentService:
 
     @staticmethod
     def upload_chunk(session_id: str, base_url: str, token: str, chunk: bytes) -> None:
-        """Uploads a single chunk of data using the provided token."""
+        """
+        Uploads a single chunk of data using the provided token.
+
+        Args:
+            session_id: The user session ID.
+            base_url: The FileHold base URL.
+            token: The upload token.
+            chunk: The bytes to upload.
+
+        Raises:
+            Exception: If upload fails.
+        """
         upload_handler_url = base_url.rstrip('/') + "/DocumentRepository/UploadHandler.ashx"
-        
+
         files = {'file': ('file', chunk, 'application/octet-stream')}
         params = {'token': token}
         cookies = {'FHLSID': session_id}
@@ -302,10 +395,27 @@ class DocumentService:
              raise Exception(error_msg)
 
     @staticmethod
-    def perform_chunked_upload(session_id: str, base_url: str, file_stream: Any, file_size: int, parent_cabinet_id: int = 0, is_archive: bool = False) -> str:
+    def perform_chunked_upload(
+        session_id: str,
+        base_url: str,
+        file_stream: Any,
+        file_size: int,
+        parent_cabinet_id: int = 0,
+        is_archive: bool = False
+    ) -> str:
         """
         Uploads a file stream in chunks to the FileHold repository.
-        Returns the upload token.
+
+        Args:
+            session_id: The user session ID.
+            base_url: The FileHold base URL.
+            file_stream: The file-like object to read from.
+            file_size: Total size of the file.
+            parent_cabinet_id: ID of the parent cabinet (optional).
+            is_archive: Whether the file is an archive (optional).
+
+        Returns:
+            The upload token.
         """
         token, chunk_size = DocumentService.create_upload_token(session_id, base_url, file_size, parent_cabinet_id, is_archive)
         
@@ -322,7 +432,13 @@ class DocumentService:
         return token
 
     @staticmethod
-    def add_document(environ: Dict, folder_object: Any, file_name: str, file_size: int, upload_token: str) -> Any:
+    def add_document(
+        environ: Dict[str, Any],
+        folder_object: Any,
+        file_name: str,
+        file_size: int,
+        upload_token: str
+    ) -> Any:
         """
         Adds a new document to a FileHold folder.
 
@@ -332,21 +448,24 @@ class DocumentService:
             file_name: The name of the file to add.
             file_size: Size of the file in bytes.
             upload_token: Token from previously uploaded content.
-        
+
         Returns:
             The result object from AddDocumentInfo.
+
+        Raises:
+            Exception: If session is missing/invalid or upload token is missing.
         """
         session_id = environ.get("filehold.session_id")
         base_url = environ.get("filehold.url", "http://localhost/FH/FileHold/")
-        
+
         if not session_id:
-            raise Exception("No session ID found") # Should be specific exception ideally
-        
+            raise Exception("No session ID found")
+
         if not upload_token:
-             raise Exception("Upload token is required for add_document")
+            raise Exception("Upload token is required for add_document")
 
         DocumentService._validate_folder_permissions(folder_object)
-        
+
         doc_schema_client = ClientFactory.get_document_schema_manager_client(session_id, base_url)
         schema, schema_id = DocumentService._get_and_validate_schema(folder_object, doc_schema_client)
 
@@ -354,23 +473,44 @@ class DocumentService:
             session_id, base_url, folder_object, schema, schema_id, doc_schema_client
         )
 
+        document_info = DocumentService._prepare_document_add_info(
+            file_name, upload_token, schema_id, folder_object.Id, fields_with_values
+        )
+
         document_manager_client = ClientFactory.get_document_manager_client(session_id, base_url)
-        document_info = {
+        return document_manager_client.service.AddDocumentInfo(document_info)
+
+    @staticmethod
+    def _prepare_document_add_info(
+        file_name: str,
+        upload_token: str,
+        schema_id: int,
+        folder_id: int,
+        fields_with_values: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """Prepares the document info dictionary for adding a document."""
+        return {
             'DocumentName': os.path.splitext(file_name)[0],
-            'UploadToken': upload_token, 
+            'UploadToken': upload_token,
             'DocumentSchemaId': schema_id,
             'OriginalFileName': file_name,
-            'FolderId': folder_object.Id,
+            'FolderId': folder_id,
             'FieldsWithValues': {'FieldWithValue': fields_with_values} if fields_with_values else None,
             'SendEmailToMembers': False,
             'SnapshotId': ZERO_GUID
         }
-        
-        return document_manager_client.service.AddDocumentInfo(document_info)
 
     @staticmethod
     def _validate_folder_permissions(folder_object: Any) -> None:
-        """Validates if the user can add documents to the folder."""
+        """
+        Validates if the user can add documents to the folder.
+
+        Args:
+            folder_object: The folder object to check permissions for.
+
+        Raises:
+            Exception: If folder is invalid or user lacks permissions.
+        """
         if folder_object is None:
              raise Exception("Target directory is not a valid FileHold folder")
         
@@ -380,7 +520,19 @@ class DocumentService:
 
     @staticmethod
     def _get_and_validate_schema(folder_object: Any, doc_schema_client: Any) -> Tuple[Any, int]:
-        """Retrieves and validates the target schema for the new document."""
+        """
+        Retrieves and validates the target schema for the new document.
+
+        Args:
+            folder_object: The target folder object.
+            doc_schema_client: The Zeep client for schema operations.
+
+        Returns:
+            A tuple containing the schema object and the schema ID.
+
+        Raises:
+            Exception: If schema cannot be found or is invalid (e.g. Offline type).
+        """
         is_auto_tagged = getattr(folder_object, 'IsAutoTagged', False)
         
         if is_auto_tagged and hasattr(folder_object, 'AutoTagging'):
@@ -410,8 +562,28 @@ class DocumentService:
         return schema, schema_id
 
     @staticmethod
-    def _prepare_fields_for_add(session_id: str, base_url: str, folder_object: Any, schema: Any, schema_id: int, doc_schema_client: Any) -> List[Dict[str, Any]]:
-        """Prepares field values based on autotagging or defaults."""
+    def _prepare_fields_for_add(
+        session_id: str,
+        base_url: str,
+        folder_object: Any,
+        schema: Any,
+        schema_id: int,
+        doc_schema_client: Any
+    ) -> List[Dict[str, Any]]:
+        """
+        Prepares field values based on autotagging or defaults.
+
+        Args:
+            session_id: The user session ID.
+            base_url: The FileHold base URL.
+            folder_object: The target folder object.
+            schema: The document schema object.
+            schema_id: The ID of the schema.
+            doc_schema_client: The Zeep client for schema operations.
+
+        Returns:
+            A list of field dictionaries for the new document.
+        """
         field_definitions = doc_schema_client.service.GetDocumentSchemaFields(schema_id)
         if not field_definitions:
             return []
@@ -479,9 +651,30 @@ class DocumentService:
         return fields_with_values
 
     @staticmethod
-    def replace_document_content(environ: Dict, document_data: ColumnsWithValues, file_name: str, file_size: int, folder_object: Any, upload_token: str) -> bool:
+    def replace_document_content(
+        environ: Dict[str, Any],
+        document_data: ColumnsWithValues,
+        file_name: str,
+        file_size: int,
+        folder_object: Any,
+        upload_token: str
+    ) -> bool:
         """
         Checks out an existing document, uploads new content, and checks it in as a new version.
+
+        Args:
+            environ: WSGI environment containing session/url info.
+            document_data: The existing document's metadata wrapper.
+            file_name: The name of the file being uploaded.
+            file_size: The size of the file.
+            folder_object: The parent folder object.
+            upload_token: The upload token.
+
+        Returns:
+            True if successful.
+
+        Raises:
+            Exception: If replacement/check-in fails.
         """
         session_id = environ.get("filehold.session_id")
         base_url = environ.get("filehold.url", "http://localhost/FH/FileHold/")
@@ -523,7 +716,17 @@ class DocumentService:
 
     @staticmethod
     def _perform_checkout_logic(doc_finder: Any, doc_manager: Any, doc_data: Any) -> None:
-        """Ensures document is checked out by the current user, performing checkout if needed."""
+        """
+        Ensures document is checked out by the current user, performing checkout if needed.
+
+        Args:
+            doc_finder: The Zeep client for document finding.
+            doc_manager: The Zeep client for document management.
+            doc_data: The document data object.
+
+        Raises:
+            Exception: If checkout not possible or owned by another user.
+        """
         
         checked_out_by = getattr(doc_data, 'CheckedOutBy', 0) or 0
         can_check_out = getattr(doc_data, 'CanCheckOut', False)
@@ -551,6 +754,18 @@ class DocumentService:
     def update_document(session_id: str, base_url: str, document_data: Any, new_name: str) -> int:
         """
         Updates document metadata, specifically the document name.
+
+        Args:
+            session_id: The user session ID.
+            base_url: The FileHold base URL.
+            document_data: The document data object to update.
+            new_name: The new name for the document.
+
+        Returns:
+            The new metadata version ID.
+
+        Raises:
+            Exception: If update fails or user permission is denied.
         """
         if not getattr(document_data, 'CanEdit', True):
             raise Exception(f"User cannot edit document {getattr(document_data, 'Name', 'Unknown')} ({document_data.DocumentId})")
@@ -592,7 +807,17 @@ class DocumentService:
 
     @staticmethod
     def _validate_schema_for_update(session_id: str, base_url: str, document_data: Any) -> None:
-        """Validates schema configuration allows update."""
+        """
+        Validates schema configuration allows update.
+
+        Args:
+            session_id: The user session ID.
+            base_url: The FileHold base URL.
+            document_data: The document data object.
+
+        Raises:
+            Exception: If schema prevents update (e.g. strict version control).
+        """
         version_number = getattr(document_data, 'VersionNumber', None)
         if version_number:
             schema_mgr = ClientFactory.get_document_schema_manager_client(session_id, base_url)
@@ -608,7 +833,16 @@ class DocumentService:
 
     @staticmethod
     def _prepare_fields_for_update(details: Any, doc_manager_client: Any) -> List[Dict[str, Any]]:
-        """Maps existing field values to safe transport objects for update."""
+        """
+        Maps existing field values to safe transport objects for update.
+
+        Args:
+            details: The document details object containing current values.
+            doc_manager_client: The Zeep client for document management.
+
+        Returns:
+             A list of field dictionaries for the update operation.
+        """
         fields_with_values = []
         if details.Columns and details.Columns.FieldDefinition and details.DocumentValues:
             columns = details.Columns.FieldDefinition
@@ -660,9 +894,21 @@ class DocumentService:
         return fields_with_values
 
     @staticmethod
-    def _create_single_document_selection(doc_manager_client: Any, document_data: Any, snapshot_id: Optional[str] = None) -> str:
+    def _create_single_document_selection(
+        doc_manager_client: Any,
+        document_data: Any,
+        snapshot_id: Optional[str] = None
+    ) -> str:
         """
         Creates a selection for a single document.
+
+        Args:
+            doc_manager_client: The Zeep client.
+            document_data: The document data object.
+            snapshot_id: Optional snapshot ID.
+
+        Returns:
+            The selection ID string (result of CreateSelection).
         """
         if snapshot_id is None:
             snapshot_id = getattr(document_data, 'SnapshotId', ZERO_GUID)
@@ -685,6 +931,18 @@ class DocumentService:
     def delete_document(session_id: str, base_url: str, document_data: Any, snapshot_id: Optional[str] = None) -> bool:
         """
         Deletes a document (and all its versions) from FileHold.
+
+        Args:
+            session_id: The user session ID.
+            base_url: The FileHold base URL.
+            document_data: The document data object to delete.
+            snapshot_id: Optional snapshot ID.
+
+        Returns:
+            True if deletion was successful.
+
+        Raises:
+             Exception: If deletion fails or permission denied.
         """
         if not getattr(document_data, 'CanDelete', False):
              raise Exception(f"User cannot delete document {document_data.DocumentId}")
@@ -704,6 +962,15 @@ class DocumentService:
     def parse_document_list(session_id: str, base_url: str, snapshot_id: str, result: Any) -> List[Dict[str, Any]]:
         """
         Parses the result from GetDocumentsWithFields into a list of simplified objects/dicts.
+
+        Args:
+            session_id: The user session ID.
+            base_url: The FileHold base URL.
+            snapshot_id: The snapshot ID associated with the result.
+            result: The result object from GetDocumentsWithFields (list of ColumnsWithValues).
+
+        Returns:
+             A list of dictionaries representing the documents.
         """
 
         if not result:
@@ -755,9 +1022,27 @@ class DocumentService:
         return parsed_docs
 
     @staticmethod
-    def save_document(environ: Dict, parent_object: Any, dto_object: Any, name: str, file_size: int, upload_token: str) -> Any:
+    def save_document(
+        environ: Dict[str, Any],
+        parent_object: Any,
+        dto_object: Any,
+        name: str,
+        file_size: int,
+        upload_token: str
+    ) -> Any:
         """
         Decides whether to create a new document or update an existing one based on the presence of dto_object.
+
+        Args:
+            environ: WSGI environment containing session/url info.
+            parent_object: The parent folder object.
+            dto_object: Existing document DTO (ColumnsWithValues) for updates, or None for new files.
+            name: The name of the file.
+            file_size: The size of the file.
+            upload_token: The upload token.
+
+        Returns:
+            The result of the add or replace operation.
         """
         if dto_object:
             # Update existing file

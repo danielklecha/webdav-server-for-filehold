@@ -33,14 +33,6 @@ jobs:
       - name: Build
         run: hatch build
 
-      - name: Publish to PyPI
-        env:
-          # Use HATCH_INDEX_USER and HATCH_INDEX_AUTH for authentication
-          # If publishing to PyPI, user is usually '__token__' and auth is the token
-          HATCH_INDEX_USER: __token__
-          HATCH_INDEX_AUTH: ${{ secrets.PYPI_API_TOKEN }}
-        run: hatch publish
-
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
