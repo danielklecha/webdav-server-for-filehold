@@ -540,6 +540,7 @@ class DocumentService:
                  doc_manager.service.CheckOutDocuments(selection_id, True)
                  doc_data.CanCheckOut = False
                  doc_data.IsCheckedOutByMe = True
+                 doc_data.CheckedOutBy = sys.maxsize
             except Exception as e:
                  raise Exception(f"Failed to checkout document: {e}")
         

@@ -1,6 +1,6 @@
 # WebDAV Adapter for FileHold
 
-> [!WARNING] This is an unofficial WebDAV server for FileHold.
+> **Disclaimer:** This is an unofficial WebDAV server for FileHold.
 
 ## Features
 
