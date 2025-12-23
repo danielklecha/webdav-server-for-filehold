@@ -175,6 +175,38 @@ class DrawerService(LibraryObjectService):
             raise Exception(f"Failed to remove drawer {drawer_id}: {str(e)}")
 
     @staticmethod
+    def move_drawer(
+        session_id: str,
+        base_url: str,
+        drawer_id: int,
+        dest_cabinet_id: int
+    ) -> bool:
+        """
+        Moves a drawer to a different cabinet.
+
+        Args:
+            session_id: The session ID for authentication.
+            base_url: The base URL of the FileHold server.
+            drawer_id: The ID of the drawer to move.
+            dest_cabinet_id: The ID of the destination cabinet.
+
+        Returns:
+            True if the move was successful.
+
+        Raises:
+            Exception: If the drawer cannot be moved.
+        """
+        try:
+            client = ClientFactory.get_library_structure_manager_client(session_id, base_url)
+            client.service.MoveDrawer(
+                drawerId=drawer_id,
+                destCabinetId=dest_cabinet_id
+            )
+            return True
+        except Exception as e:
+            raise Exception(f"Failed to move drawer {drawer_id} to cabinet {dest_cabinet_id}: {str(e)}")
+
+    @staticmethod
     def _get_items_from_collection(collection_wrapper: Any, item_name: str) -> List[Any]:
         """
         Helper method to extract a list of items from a Zeep array wrapper.

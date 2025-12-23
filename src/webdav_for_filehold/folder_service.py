@@ -233,6 +233,42 @@ class FolderService(LibraryObjectService):
             raise Exception(f"Failed to remove folder {folder_id}: {e}") from e
 
     @staticmethod
+    def move_folder(
+        session_id: str,
+        base_url: str,
+        folder_id: int,
+        dest_drawer_id: int,
+        dest_category_id: int
+    ) -> bool:
+        """Moves a folder to a different drawer or category.
+
+        Args:
+            session_id: The user session ID.
+            base_url: The base URL of the FileHold server.
+            folder_id: The ID of the folder to move.
+            dest_drawer_id: The ID of the destination drawer.
+            dest_category_id: The ID of the destination category (0 if moving to drawer root).
+
+        Returns:
+            True if the move was successful.
+
+        Raises:
+            Exception: If the folder cannot be moved.
+        """
+        try:
+            client = ClientFactory.get_library_structure_manager_client(
+                session_id, base_url
+            )
+            client.service.MoveFolder(
+                folderId=folder_id,
+                destDrawerId=dest_drawer_id,
+                destCategoryId=dest_category_id
+            )
+            return True
+        except Exception as e:
+            raise Exception(f"Failed to move folder {folder_id}: {e}") from e
+
+    @staticmethod
     def get_schema_id_by_name(
         session_id: str,
         base_url: str,

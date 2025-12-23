@@ -22,9 +22,9 @@ class TestReplaceLogic(unittest.TestCase):
         mock_fields_wrapper.FieldDefinition = [field_def]
         
         with patch.object(DocumentService, '_get_search_columns', return_value=mock_fields_wrapper), \
-             patch('webdav_for_filehold.document_service.DocumentService._create_single_document_selection', return_value='sel1'):
+             patch('webdav_for_filehold.document_service.DocumentService._create_single_document_selection', return_value='sel1') as mock_create_selection:
              # Act
-             DocumentService._perform_checkout_logic(doc_client, doc_manager, soap_object)
+             DocumentService._perform_checkout_logic(doc_client, doc_manager, soap_object, snapshot_id="snap1")
              
              # Assert
              # Verify check out happened
@@ -32,6 +32,8 @@ class TestReplaceLogic(unittest.TestCase):
              # Verify in-place update
              self.assertEqual(soap_object.CanCheckOut, False)
              self.assertEqual(soap_object.IsCheckedOutByMe, True)
+             # Verify snapshot_id passed to selection creation
+             mock_create_selection.assert_called_with(doc_manager, soap_object, "snap1")
 
     def test_replace_document_content_flow(self):
         # Setup
@@ -67,13 +69,15 @@ class TestReplaceLogic(unittest.TestCase):
             mock_dds.get_original_file_name.return_value = "test"
             
             # Act
-            result = DocumentService.replace_document_content(environ, doc_wrapper, file_name, file_size, folder_object, upload_token)
+            result = DocumentService.replace_document_content(
+                environ, doc_wrapper, file_name, file_size, folder_object, upload_token, snapshot_id="snap2"
+            )
             
             # Assert
             self.assertTrue(result)
             
-            # Verify _perform_checkout_logic called with document_data (internal item)
-            mock_perform_checkout.assert_called_with(mock_finder, mock_manager, document_data)
+            # Verify _perform_checkout_logic called with document_data and snapshot_id
+            mock_perform_checkout.assert_called_with(mock_finder, mock_manager, document_data, "snap2")
             
             # Verify CheckIn
             mock_manager.service.CheckIn.assert_called()

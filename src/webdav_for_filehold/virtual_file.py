@@ -103,6 +103,7 @@ class VirtualFile(DAVNonCollection):
             self.name,
             self.file_size,
             upload_token,
+            snapshot_id=self.snapshot_id
         )
 
     def get_content_length(self) -> Optional[int]:
@@ -263,20 +264,65 @@ class VirtualFile(DAVNonCollection):
             dest_parent_check = ""
 
         if current_parent_path != dest_parent_check:
-            raise Exception("Moving documents to different folders is not supported.")
+            # Move to different folder
+            dest_parent_res = self.provider.get_resource_inst(dest_parent_check, self.environ)
+            if not dest_parent_res:
+                 raise Exception(f"Destination folder not found: {dest_parent_check}")
+
+            # Check if destination is a Folder (Level 3)
+            # Avoiding circular import by checking attribute directly, usually level 3 is Folder
+            if not getattr(dest_parent_res, 'level', -1) == 3: # 3 is LEVEL_FOLDER
+                 raise Exception("Documents can only be moved to Folders.")
+            
+            target_folder_id = int(dest_parent_res.resource_id)
+            session_id, base_url = self._get_session_context()
+
+            # Perform the move
+            DocumentService.move_document(
+                session_id, 
+                base_url, 
+                self.dto_object, 
+                target_folder_id, 
+                snapshot_id=self.snapshot_id
+            )
+            
+            # If we just moved, valid parent object for the file instance is now stale, 
+            # but we are likely about to discard this instance or return success.
 
         if not self.dto_object:
             raise Exception("Cannot update document: Document data not available")
 
         session_id, base_url = self._get_session_context()
 
-        new_metadata_id = DocumentService.update_document(
-            session_id, base_url, self.dto_object, new_name
-        )
+        if new_name != self.name:
+            new_metadata_id = DocumentService.update_document(
+                session_id, base_url, self.dto_object, new_name
+            )
 
-        if new_metadata_id:
-            self.metadata_version_id = new_metadata_id
-            self.name = new_name
+            if new_metadata_id:
+                self.metadata_version_id = new_metadata_id
+                self.name = new_name
 
         return True
 
+
+    def support_recursive_move(self, dest_path: str) -> bool:
+        """
+        Check if recursive move is supported.
+
+        Args:
+            dest_path: The destination path.
+
+        Returns:
+            True always.
+        """
+        return True
+
+    def move_recursive(self, dest_path: str) -> None:
+        """
+        Move the file to a new location.
+
+        Args:
+            dest_path: The destination path.
+        """
+        self.handle_move(dest_path)

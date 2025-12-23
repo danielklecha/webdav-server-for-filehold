@@ -657,7 +657,8 @@ class DocumentService:
         file_name: str,
         file_size: int,
         folder_object: Any,
-        upload_token: str
+        upload_token: str,
+        snapshot_id: Optional[str] = None
     ) -> bool:
         """
         Checks out an existing document, uploads new content, and checks it in as a new version.
@@ -669,6 +670,7 @@ class DocumentService:
             file_size: The size of the file.
             folder_object: The parent folder object.
             upload_token: The upload token.
+            snapshot_id: Optional snapshot ID.
 
         Returns:
             True if successful.
@@ -695,7 +697,7 @@ class DocumentService:
             raise Exception("No document data found in ColumnsWithValues")
 
         # Checkout if needed
-        DocumentService._perform_checkout_logic(doc_finder, document_manager_client, doc_data)
+        DocumentService._perform_checkout_logic(doc_finder, document_manager_client, doc_data, snapshot_id)
         
         local_path = DocumentDataService.get_original_file_name_with_extension(doc_data, fields)
         file_name_arg = DocumentDataService.get_original_file_name(doc_data, fields)
@@ -715,7 +717,7 @@ class DocumentService:
         return True
 
     @staticmethod
-    def _perform_checkout_logic(doc_finder: Any, doc_manager: Any, doc_data: Any) -> None:
+    def _perform_checkout_logic(doc_finder: Any, doc_manager: Any, doc_data: Any, snapshot_id: Optional[str] = None) -> None:
         """
         Ensures document is checked out by the current user, performing checkout if needed.
 
@@ -723,6 +725,7 @@ class DocumentService:
             doc_finder: The Zeep client for document finding.
             doc_manager: The Zeep client for document management.
             doc_data: The document data object.
+            snapshot_id: Optional snapshot ID.
 
         Raises:
             Exception: If checkout not possible or owned by another user.
@@ -738,7 +741,10 @@ class DocumentService:
                 raise Exception("Document cannot be checked out (Locked, permissions, or system state)")
             
             try:
-                 selection_id = DocumentService._create_single_document_selection(doc_manager, doc_data)
+                 if snapshot_id is None:
+                     snapshot_id = getattr(doc_data, 'SnapshotId', ZERO_GUID)
+
+                 selection_id = DocumentService._create_single_document_selection(doc_manager, doc_data, snapshot_id)
                  doc_manager.service.CheckOutDocuments(selection_id, True)
                  doc_data.CanCheckOut = False
                  doc_data.IsCheckedOutByMe = True
@@ -751,14 +757,14 @@ class DocumentService:
              raise Exception(f"Document is checked out by another user (Id: {checked_out_by})")
 
     @staticmethod
-    def update_document(session_id: str, base_url: str, document_data: Any, new_name: str) -> int:
+    def update_document(session_id: str, base_url: str, dto_object: Any, new_name: str) -> int:
         """
         Updates document metadata, specifically the document name.
 
         Args:
             session_id: The user session ID.
             base_url: The FileHold base URL.
-            document_data: The document data object to update.
+            dto_object: The document object to update (e.g. ColumnsWithValues).
             new_name: The new name for the document.
 
         Returns:
@@ -767,15 +773,20 @@ class DocumentService:
         Raises:
             Exception: If update fails or user permission is denied.
         """
-        if not getattr(document_data, 'CanEdit', True):
-            raise Exception(f"User cannot edit document {getattr(document_data, 'Name', 'Unknown')} ({document_data.DocumentId})")
+        # Unwrap ColumnsWithValues if necessary
+        doc_data = dto_object
+        if hasattr(dto_object, 'DocumentData') and dto_object.DocumentData:
+            doc_data = dto_object.DocumentData[0]
 
-        DocumentService._validate_schema_for_update(session_id, base_url, document_data)
+        if not getattr(doc_data, 'CanEdit', True):
+            raise Exception(f"User cannot edit document {getattr(doc_data, 'Name', 'Unknown')} ({doc_data.DocumentId})")
+
+        DocumentService._validate_schema_for_update(session_id, base_url, doc_data)
 
         # Retrieve current details to get all field values
         doc_finder = ClientFactory.get_document_finder_client(session_id, base_url)
         try:
-            details = doc_finder.service.GetDocumentDetails(metadataVersionId=document_data.MetadataVersionId)
+            details = doc_finder.service.GetDocumentDetails(metadataVersionId=doc_data.MetadataVersionId)
         except Exception as e:
             raise Exception(f"Failed to get document details: {e}")
 
@@ -787,15 +798,15 @@ class DocumentService:
         fields_with_values = DocumentService._prepare_fields_for_update(details, document_manager_client)
 
         try:
-            extension = getattr(document_data, 'Extension', '')
+            extension = getattr(doc_data, 'Extension', '')
             document_name = new_name
             
             if extension and new_name.lower().endswith(extension.lower()):
                 document_name = new_name[:-(len(extension))]
                     
             new_metadata_version_id = document_manager_client.service.SetMetadata(
-                prevMetadataVersionId=document_data.MetadataVersionId,
-                documentSchemaId=document_data.DocumentSchemaId,
+                prevMetadataVersionId=doc_data.MetadataVersionId,
+                documentSchemaId=doc_data.DocumentSchemaId,
                 documentName=document_name,
                 fieldsWithValues={'FieldWithValue': fields_with_values},
                 overwritePrevious=False,
@@ -897,7 +908,7 @@ class DocumentService:
     def _create_single_document_selection(
         doc_manager_client: Any,
         document_data: Any,
-        snapshot_id: Optional[str] = None
+        snapshot_id: str
     ) -> str:
         """
         Creates a selection for a single document.
@@ -905,14 +916,11 @@ class DocumentService:
         Args:
             doc_manager_client: The Zeep client.
             document_data: The document data object.
-            snapshot_id: Optional snapshot ID.
+            snapshot_id: Snapshot ID.
 
         Returns:
             The selection ID string (result of CreateSelection).
         """
-        if snapshot_id is None:
-            snapshot_id = getattr(document_data, 'SnapshotId', ZERO_GUID)
-
         snapshot_selection = {
             'SnapshotId': snapshot_id,
             'MetadataVersionIdList': {'int': [document_data.MetadataVersionId]},
@@ -926,6 +934,54 @@ class DocumentService:
 
         create_response = doc_manager_client.service.CreateSelection(selection)
         return create_response
+
+    @staticmethod
+    def move_document(
+        session_id: str,
+        base_url: str,
+        document_data: Any,
+        target_folder_id: int,
+        snapshot_id: Optional[str] = None
+    ) -> bool:
+        """
+        Moves a document to a different folder.
+
+        Args:
+            session_id: The user session ID.
+            base_url: The FileHold base URL.
+            document_data: The document data object to move.
+            target_folder_id: The ID of the destination folder.
+            snapshot_id: Optional snapshot ID used for selection.
+
+        Returns:
+            True if the move was successful.
+
+        Raises:
+            Exception: If the move fails.
+        """
+        document_manager_client = ClientFactory.get_document_manager_client(session_id, base_url)
+        
+        # Unwrap ColumnsWithValues if necessary
+        doc_data = document_data
+        if hasattr(document_data, 'DocumentData') and document_data.DocumentData:
+            doc_data = document_data.DocumentData[0]
+
+        try:
+            # Create selection for the document to move
+            selection_id = DocumentService._create_single_document_selection(
+                document_manager_client, 
+                doc_data,
+                snapshot_id
+            )
+            
+            # Call Move method
+            result = document_manager_client.service.Move(selection_id, target_folder_id)
+            return result
+            
+        except Exception as e:
+            doc_id = getattr(doc_data, 'DocumentId', 'Unknown')
+            logger.error(f"Failed to move document {doc_id} to folder {target_folder_id}: {e}")
+            raise Exception(f"Failed to move document: {e}")
 
     @staticmethod
     def delete_document(session_id: str, base_url: str, document_data: Any, snapshot_id: Optional[str] = None) -> bool:
@@ -950,6 +1006,9 @@ class DocumentService:
         document_manager_client = ClientFactory.get_document_manager_client(session_id, base_url)
         
         try:
+            if snapshot_id is None:
+                snapshot_id = getattr(document_data, 'SnapshotId', ZERO_GUID)
+
             selection_id = DocumentService._create_single_document_selection(document_manager_client, document_data, snapshot_id)
             
             document_manager_client.service.DeleteDocuments(selectionId=selection_id, removeAllVersions=True)
@@ -1028,7 +1087,8 @@ class DocumentService:
         dto_object: Any,
         name: str,
         file_size: int,
-        upload_token: str
+        upload_token: str,
+        snapshot_id: Optional[str] = None
     ) -> Any:
         """
         Decides whether to create a new document or update an existing one based on the presence of dto_object.
@@ -1040,6 +1100,7 @@ class DocumentService:
             name: The name of the file.
             file_size: The size of the file.
             upload_token: The upload token.
+            snapshot_id: Optional snapshot ID.
 
         Returns:
             The result of the add or replace operation.
@@ -1052,7 +1113,8 @@ class DocumentService:
                 name, 
                 file_size, 
                 folder_object=parent_object,
-                upload_token=upload_token
+                upload_token=upload_token,
+                snapshot_id=snapshot_id
             )
         else:
              # Create new file
@@ -1060,6 +1122,6 @@ class DocumentService:
                  environ, 
                  parent_object, 
                  name, 
-                 file_size,
+                 file_size, 
                  upload_token=upload_token
              )

@@ -672,10 +672,71 @@ class VirtualFolder(DAVCollection):
         is_rename = dest_parent_check == current_parent_path
 
         if not is_rename:
-            logger.warning(
-                f"Move rejected: dest_path={dest_path}, current_parent={current_parent_path}"
-            )
-            raise Exception("Moving objects to different parents is not supported yet.")
+            try:
+                # Resolve destination parent resource
+                dest_parent_res = self.provider.get_resource_inst(dest_parent_check, self.environ)
+                if not dest_parent_res:
+                    raise Exception(f"Destination parent not found: {dest_parent_check}")
+
+                session_id = self.environ.get("filehold.session_id")
+                base_url = self.environ.get("filehold.url", "http://localhost/FH/FileHold/")
+
+                # Handle Drawer Move (to another Cabinet)
+                if self.level == self.LEVEL_DRAWER:
+                    if dest_parent_res.level != self.LEVEL_CABINET:
+                        raise Exception("Drawers can only be moved to Cabinets.")
+                    
+                    logger.info(f"Moving drawer {self.resource_id} to cabinet {dest_parent_res.resource_id}")
+                    if DrawerService.move_drawer(session_id, base_url, self.resource_id, dest_parent_res.resource_id):
+                         # If name changed during move (not really supported by MoveDrawer API directly but good to handle rename separately if needed)
+                         if new_name != self.name:
+                             logger.info(f"Renaming drawer {self.resource_id} from {self.name} to {new_name} after move")
+                             DrawerService.update_drawer(
+                                 session_id,
+                                 base_url,
+                                 self.resource_id,
+                                 new_name,
+                                 self.dto_object,
+                             )
+                         return True
+
+                # Handle Folder Move (to Drawer or Category)
+                elif self.level == self.LEVEL_FOLDER:
+                    dest_drawer_id = 0
+                    dest_category_id = 0
+
+                    if dest_parent_res.level == self.LEVEL_DRAWER:
+                        dest_drawer_id = dest_parent_res.resource_id
+                        dest_category_id = 0
+                    elif dest_parent_res.level == self.LEVEL_CATEGORY:
+                        # We need the drawer ID of the target category. 
+                        # VirtualFolder for Category should have parent_resource_id as the drawer ID.
+                        if not dest_parent_res.parent_resource_id:
+                             raise Exception("Target category does not have a valid parent drawer ID.")
+                        dest_drawer_id = dest_parent_res.parent_resource_id
+                        dest_category_id = dest_parent_res.resource_id
+                    else:
+                        raise Exception("Folders can only be moved to Drawers or Categories.")
+
+                    logger.info(f"Moving folder {self.resource_id} to Drawer {dest_drawer_id}, Category {dest_category_id}")
+                    if FolderService.move_folder(session_id, base_url, self.resource_id, dest_drawer_id, dest_category_id):
+                        if new_name != self.name:
+                            logger.info(f"Renaming folder {self.resource_id} from {self.name} to {new_name} after move")
+                            FolderService.update_folder(
+                                session_id,
+                                base_url,
+                                self.resource_id,
+                                new_name,
+                                self.dto_object,
+                            )
+                        return True
+                
+                else:
+                    raise Exception(f"Moving items at level {self.level} to different parents is not supported.")
+
+            except Exception as e:
+                logger.error(f"Move failed: {e}")
+                raise Exception(f"Failed to move resource: {e}")
 
         session_id = self.environ.get("filehold.session_id")
         base_url = self.environ.get("filehold.url", "http://localhost/FH/FileHold/")
