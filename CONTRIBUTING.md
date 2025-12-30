@@ -7,6 +7,7 @@
 - `hatch run webdav-server-for-filehold`: Run the server.
 - `hatch build`: Build the package.
 - `hatch clean`: Clean up the environment.
+- `hatch run cov`: Run tests with coverage reporting.
 
 ## Testing
 
@@ -32,3 +33,15 @@ hatch test tests/e2e
 - `FILEHOLD_URL`: URL to the FileHold instance (default: `http://localhost/FH/FileHold/`).
 - `FILEHOLD_USERNAME`: Username (default: `sysadm`).
 - `FILEHOLD_PASSWORD`: Password (REQUIRED).
+
+### Coverage
+
+To run tests with coverage reporting:
+
+```bash
+hatch run cov
+```
+
+## Code Style
+
+This project uses `ruff` and `black` for code style.

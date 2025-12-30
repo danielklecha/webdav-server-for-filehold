@@ -42,7 +42,13 @@ packages = ["src/webdav_server_for_filehold"]
 dependencies = [
   "pytest",
   "pytest-mock",
+  "pytest-cov",
+  "ruff",
+  "black",
 ]
+
+[tool.hatch.envs.default.scripts]
+cov = "pytest --cov=webdav_server_for_filehold --cov-report=term-missing"
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
