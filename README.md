@@ -10,14 +10,14 @@ This project is an independent open-source software project. It is **not** affil
 
 ## Features
 
-This adapter allows you to access your FileHold documents via the WebDAV protocol.
+This server allows you to access your FileHold documents via the WebDAV protocol.
 
-1. **Browsing:** Navigate through Cabinets, Drawers, Folder Groups, and Folders.
+1. **Browsing:** Navigate through cabinets, drawers, folder groups, and folders.
 2. **Downloading:** Download documents.
-3. **Adding:** Add Cabinets, Drawers, Folder Groups, Folders and documents.
+3. **Adding:** Add cabinets, drawers, folder groups, folders and documents.
 4. **Overriding:** Override existing documents.
-5. **Structure Modification:** Create Cabinets, Drawers, Folder Groups, and Folders.
-6. **Renaming:** Rename Cabinets, Drawers, Folder Groups, Folders and documents.
+5. **Structure Modification:** Create cabinets, drawers, folder groups, and folders.
+6. **Renaming:** Rename cabinets, drawers, folder groups, folders and documents.
 
 ## Configuration
 
@@ -42,36 +42,7 @@ webdav-server-for-filehold --port 9090 --filehold-url http://filehold.example.co
 1. `pip install webdav_server_for_filehold-*.whl`: Install the package.
 2. `webdav-server-for-filehold --help`: Run the application.
 
-## Development
+## Contributing
 
-- `hatch env create`: Create virtual environment.
-- `hatch shell`: Enter the environment.
-- `hatch run webdav-server-for-filehold`: Run the server.
-- `hatch build`: Build the package.
-- `hatch publish`: Publish the package.
-- `hatch clean`: Clean up the environment.
+Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for development and testing instructions.
 
-## Testing
-
-### Unit Tests
-
-To run the unit tests, use the following command:
-
-```bash
-hatch test tests/unit
-```
-
-### End-to-End (E2E) Tests
-
-E2E tests require a running instance of FileHold and a valid user account.
-
-```powershell
-$env:FILEHOLD_PASSWORD="your_password"
-hatch test tests/e2e
-```
-
-**Environment Variables:**
-
-- `FILEHOLD_URL`: URL to the FileHold instance (default: `http://localhost/FH/FileHold/`).
-- `FILEHOLD_USERNAME`: Username (default: `sysadm`).
-- `FILEHOLD_PASSWORD`: Password (REQUIRED).
