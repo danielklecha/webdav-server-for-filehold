@@ -1,6 +1,12 @@
 # WebDAV for FileHold
 
-> **Disclaimer:** This is an unofficial WebDAV server for FileHold.
+## Disclaimer
+
+**Unofficial Implementation**
+This project is an independent open-source software project. It is **not** affiliated with, endorsed by, sponsored by, or associated with **FileHold Systems Inc.**
+
+**Trademarks**
+"FileHold" and the FileHold logo are trademarks or registered trademarks of FileHold Systems Inc. in the United States, Canada, and/or other countries. All other trademarks cited herein are the property of their respective owners. Use of these names is for descriptive purposes only (nominative fair use) to indicate compatibility.
 
 ## Features
 
@@ -28,19 +34,19 @@ You can configure the server using the following command-line arguments:
 
 **Example:**
 ```bash
-webdav-for-filehold --port 9090 --filehold-url http://filehold.example.com/FH/FileHold/ --default_schema_name "Document"
+webdav-server-for-filehold --port 9090 --filehold-url http://filehold.example.com/FH/FileHold/ --default_schema_name "Document"
 ```
 
 ## Deployment
 
-1. `pip install webdav_for_filehold-*.whl`: Install the package.
-2. `webdav-for-filehold --help`: Run the application.
+1. `pip install webdav_server_for_filehold-*.whl`: Install the package.
+2. `webdav-server-for-filehold --help`: Run the application.
 
 ## Development
 
 - `hatch env create`: Create virtual environment.
 - `hatch shell`: Enter the environment.
-- `hatch run webdav-for-filehold`: Run the server.
+- `hatch run webdav-server-for-filehold`: Run the server.
 - `hatch build`: Build the package.
 - `hatch publish`: Publish the package.
 - `hatch clean`: Clean up the environment.

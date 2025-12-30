@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import MagicMock, patch
 from typing import Dict, Any, Optional
 
-from webdav_for_filehold.folder_service import FolderService
-from webdav_for_filehold.virtual_folder import VirtualFolder
+from webdav_server_for_filehold.folder_service import FolderService
+from webdav_server_for_filehold.virtual_folder import VirtualFolder
 
 
 class TestDefaultSchema(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestDefaultSchema(unittest.TestCase):
         """
         Test getting schema ID by name when the schema exists.
         """
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_document_schema_manager_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_schema_manager_client') as mock_get_client:
             mock_service = MagicMock()
             mock_get_client.return_value.service = mock_service
 
@@ -43,7 +43,7 @@ class TestDefaultSchema(unittest.TestCase):
         """
         Test getting schema ID by name when the schema does not exist.
         """
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_document_schema_manager_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_schema_manager_client') as mock_get_client:
             mock_service = MagicMock()
             mock_get_client.return_value.service = mock_service
             mock_service.GetDocumentSchemasInfoList.return_value = []
@@ -51,8 +51,8 @@ class TestDefaultSchema(unittest.TestCase):
             result = FolderService.get_schema_id_by_name("sid", "url", "Missing Schema")
             self.assertIsNone(result)
 
-    @patch('webdav_for_filehold.cabinet_service.CabinetService.add_cabinet')
-    @patch('webdav_for_filehold.folder_service.FolderService.get_schema_id_by_name')
+    @patch('webdav_server_for_filehold.cabinet_service.CabinetService.add_cabinet')
+    @patch('webdav_server_for_filehold.folder_service.FolderService.get_schema_id_by_name')
     def test_create_cabinet_with_default_schema(self, mock_get_schema: MagicMock, mock_add_cabinet: MagicMock) -> None:
         """
         Test creating a cabinet with a default schema.
@@ -81,8 +81,8 @@ class TestDefaultSchema(unittest.TestCase):
             default_schema_name="MySchema"
         )
 
-    @patch('webdav_for_filehold.cabinet_service.CabinetService.add_cabinet')
-    @patch('webdav_for_filehold.folder_service.FolderService.get_schema_id_by_name')
+    @patch('webdav_server_for_filehold.cabinet_service.CabinetService.add_cabinet')
+    @patch('webdav_server_for_filehold.folder_service.FolderService.get_schema_id_by_name')
     def test_create_cabinet_schema_not_found(self, mock_get_schema: MagicMock, mock_add_cabinet: MagicMock) -> None:
         """
         Test creating a cabinet when the default schema is not found.
@@ -108,8 +108,8 @@ class TestDefaultSchema(unittest.TestCase):
             default_schema_name="MissingSchema"
         )
 
-    @patch('webdav_for_filehold.folder_service.FolderService.add_folder')
-    @patch('webdav_for_filehold.folder_service.FolderService.get_schema_id_by_name')
+    @patch('webdav_server_for_filehold.folder_service.FolderService.add_folder')
+    @patch('webdav_server_for_filehold.folder_service.FolderService.get_schema_id_by_name')
     def test_create_folder_with_default_schema(self, mock_get_schema: MagicMock, mock_add_folder: MagicMock) -> None:
         """
         Test creating a folder with a default schema.
@@ -144,8 +144,8 @@ class TestDefaultSchema(unittest.TestCase):
         """
         Test arguments passed to AddFolder service.
         """
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client, \
-                patch('webdav_for_filehold.folder_service.FolderService.get_schema_id_by_name') as mock_get_schema:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client, \
+                patch('webdav_server_for_filehold.folder_service.FolderService.get_schema_id_by_name') as mock_get_schema:
 
             mock_service = MagicMock()
             mock_get_client.return_value.service = mock_service

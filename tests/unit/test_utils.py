@@ -1,5 +1,5 @@
 import unittest
-from webdav_for_filehold.utils import sanitize_name
+from webdav_server_for_filehold.utils import sanitize_name
 
 
 class TestUtils(unittest.TestCase):

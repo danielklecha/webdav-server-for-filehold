@@ -2,14 +2,14 @@ import unittest
 from unittest.mock import MagicMock, patch
 from typing import Dict, Any, List
 
-from webdav_for_filehold.virtual_folder import VirtualFolder
-from webdav_for_filehold.virtual_file import VirtualFile
-from webdav_for_filehold.document_service import DocumentService
-from webdav_for_filehold.cabinet_service import CabinetService
-from webdav_for_filehold.drawer_service import DrawerService
-from webdav_for_filehold.folder_service import FolderService
-from webdav_for_filehold.category_service import CategoryService
-from webdav_for_filehold.provider import CustomProvider
+from webdav_server_for_filehold.virtual_folder import VirtualFolder
+from webdav_server_for_filehold.virtual_file import VirtualFile
+from webdav_server_for_filehold.document_service import DocumentService
+from webdav_server_for_filehold.cabinet_service import CabinetService
+from webdav_server_for_filehold.drawer_service import DrawerService
+from webdav_server_for_filehold.folder_service import FolderService
+from webdav_server_for_filehold.category_service import CategoryService
+from webdav_server_for_filehold.provider import CustomProvider
 
 
 class TestVirtualFolder(unittest.TestCase):
@@ -36,10 +36,10 @@ class TestVirtualFolder(unittest.TestCase):
         vf = VirtualFolder("/", environ, level=0)
 
         # Mock get_tree_structure
-        with patch('webdav_for_filehold.cabinet_service.CabinetService.get_tree_structure') as mock_get_tree:
+        with patch('webdav_server_for_filehold.cabinet_service.CabinetService.get_tree_structure') as mock_get_tree:
             mock_get_tree.return_value = [mock_cabinet]
 
-            with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
+            with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
                 members = vf.get_member_list()
 
                 self.assertEqual(len(members), 1)
@@ -72,9 +72,9 @@ class TestVirtualFolder(unittest.TestCase):
         mock_cabinet.Name = "Cabinet One"
         mock_cabinet.Id = 1
 
-        with patch('webdav_for_filehold.cabinet_service.CabinetService.get_tree_structure') as mock_get_tree:
+        with patch('webdav_server_for_filehold.cabinet_service.CabinetService.get_tree_structure') as mock_get_tree:
             mock_get_tree.return_value = [mock_cabinet]
-            with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
+            with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
                 resource = provider.get_resource_inst("/Cabinet One", environ)
 
                 self.assertIsNotNone(resource)
@@ -120,10 +120,10 @@ class TestVirtualFolder(unittest.TestCase):
         mock_doc_client.service.GetDocumentsWithFields.return_value.GetDocumentsWithFieldsResult = mock_result
         mock_doc_client.service.GetSnapshotDocumentCount.return_value = 1
 
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_document_finder_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_finder_client') as mock_get_client:
             mock_get_client.return_value = mock_doc_client
 
-            with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
+            with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
                 members = vf.get_member_list()
 
             self.assertEqual(len(members), 1)
@@ -154,7 +154,7 @@ class TestVirtualFolder(unittest.TestCase):
 
         vf = VirtualFolder("/", environ, level=0)
 
-        with patch('webdav_for_filehold.cabinet_service.CabinetService.add_cabinet') as mock_add_cabinet:
+        with patch('webdav_server_for_filehold.cabinet_service.CabinetService.add_cabinet') as mock_add_cabinet:
             mock_add_cabinet.return_value = 123
 
             vf.create_collection("New Cabinet")
@@ -186,12 +186,12 @@ class TestVirtualFolder(unittest.TestCase):
 
         vf_cab_1 = VirtualFolder("/Cab_1", environ, resource_id=1, level=1, soap_object=mock_cabinet_1)
 
-        with patch('webdav_for_filehold.cabinet_service.CabinetService.get_cabinet_structure') as mock_get_cab:
+        with patch('webdav_server_for_filehold.cabinet_service.CabinetService.get_cabinet_structure') as mock_get_cab:
             mock_full_cabinet = MagicMock()
             mock_full_cabinet.Drawers.Drawer = [MagicMock(Name="D1", Id=10)]
             mock_get_cab.return_value = mock_full_cabinet
 
-            with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
+            with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
                 members = vf_cab_1.get_member_list()
                 mock_get_cab.assert_called_once()
                 self.assertEqual(len(members), 1)
@@ -205,8 +205,8 @@ class TestVirtualFolder(unittest.TestCase):
 
         vf_cab_2 = VirtualFolder("/Cab_2", environ, resource_id=2, level=1, soap_object=mock_cabinet_2)
 
-        with patch('webdav_for_filehold.cabinet_service.CabinetService.get_cabinet_structure') as mock_get_cab:
-            with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
+        with patch('webdav_server_for_filehold.cabinet_service.CabinetService.get_cabinet_structure') as mock_get_cab:
+            with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
                 members = vf_cab_2.get_member_list()
                 mock_get_cab.assert_not_called()
                 self.assertEqual(len(members), 0)
@@ -222,13 +222,13 @@ class TestVirtualFolder(unittest.TestCase):
 
         vf_drawer_3 = VirtualFolder("/...,Drawer_3", environ, resource_id=3, level=2, soap_object=mock_drawer_3)
 
-        with patch('webdav_for_filehold.drawer_service.DrawerService.get_drawer_structure') as mock_get_drawer:
+        with patch('webdav_server_for_filehold.drawer_service.DrawerService.get_drawer_structure') as mock_get_drawer:
             mock_struct = MagicMock()
             mock_struct.Folders.Folder = [MagicMock(Name="F1", Id=30)]
             mock_struct.Categories = None
             mock_get_drawer.return_value = mock_struct
 
-            with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
+            with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
                 members = vf_drawer_3.get_member_list()
                 mock_get_drawer.assert_called_once()
                 self.assertEqual(len(members), 1)
@@ -243,8 +243,8 @@ class TestVirtualFolder(unittest.TestCase):
 
         vf_drawer_4 = VirtualFolder("/...,Drawer_4", environ, resource_id=4, level=2, soap_object=mock_drawer_4)
 
-        with patch('webdav_for_filehold.drawer_service.DrawerService.get_drawer_structure') as mock_get_drawer:
-            with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
+        with patch('webdav_server_for_filehold.drawer_service.DrawerService.get_drawer_structure') as mock_get_drawer:
+            with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
                 members = vf_drawer_4.get_member_list()
                 mock_get_drawer.assert_not_called()
                 self.assertEqual(len(members), 0)
@@ -266,7 +266,7 @@ class TestVirtualFolder(unittest.TestCase):
         c2 = MagicMock(Name="Cab A", Id=5)
         c3 = MagicMock(Name="Cab B", Id=20)
 
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
             mock_client = MagicMock()
             mock_get_client.return_value = mock_client
             mock_client.service.GetTreeStructure.return_value = [c1, c2, c3]
@@ -339,9 +339,9 @@ class TestVirtualFolder(unittest.TestCase):
         mock_doc_client.service.GetDocumentsWithFields.return_value.GetDocumentsWithFieldsResult = mock_result
         mock_doc_client.service.GetSnapshotDocumentCount.return_value = 2
 
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_document_finder_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_finder_client') as mock_get_client:
             mock_get_client.return_value = mock_doc_client
-            with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
+            with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client'):
                 members = vf.get_member_list()
 
                 self.assertEqual(len(members), 2)
@@ -390,7 +390,7 @@ class TestVirtualFolder(unittest.TestCase):
         # Test 1: With explicit snapshot_id
         vf = VirtualFile("/Doc.txt", environ, name="Doc.txt", dto_object=mock_doc, snapshot_id="guid-snapshot-123")
 
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_document_manager_client') as mock_get_dm:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_manager_client') as mock_get_dm:
             mock_dm = MagicMock()
             mock_get_dm.return_value = mock_dm
             mock_dm.service.CreateSelection.return_value.CreateSelectionResult = 555
@@ -412,7 +412,7 @@ class TestVirtualFolder(unittest.TestCase):
 
         vf2 = VirtualFile("/Doc2.txt", environ, name="Doc2.txt", dto_object=mock_doc)
 
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_document_manager_client') as mock_get_dm:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_manager_client') as mock_get_dm:
             mock_dm = MagicMock()
             mock_get_dm.return_value = mock_dm
             mock_dm.service.CreateSelection.return_value.CreateSelectionResult = 666
@@ -430,7 +430,7 @@ class TestVirtualFolder(unittest.TestCase):
         Test helper functions for removing different types of library objects.
         """
         # Test usage of remove_cabinet, remove_drawer, remove_folder, remove_category
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
             mock_client = MagicMock()
             mock_get_client.return_value = mock_client
 
@@ -461,26 +461,26 @@ class TestVirtualFolder(unittest.TestCase):
 
         # 1. Level 1 (Cabinet)
         vf_cab = VirtualFolder("/Cab", environ, resource_id=10, level=1)
-        with patch('webdav_for_filehold.cabinet_service.CabinetService.remove_cabinet') as mock_rm:
+        with patch('webdav_server_for_filehold.cabinet_service.CabinetService.remove_cabinet') as mock_rm:
             vf_cab.delete()
             mock_rm.assert_called_with("test_session", "http://localhost/FH/FileHold/", 10)
 
         # 2. Level 2 (Drawer)
         vf_drawer = VirtualFolder("/Cab/Drawer", environ, resource_id=20, level=2)
-        with patch('webdav_for_filehold.drawer_service.DrawerService.remove_drawer') as mock_rm:
+        with patch('webdav_server_for_filehold.drawer_service.DrawerService.remove_drawer') as mock_rm:
             vf_drawer.delete()
             mock_rm.assert_called_with("test_session", "http://localhost/FH/FileHold/", 20)
 
         # 3. Level 3 (Folder)
         vf_folder = VirtualFolder("/Cab/Drawer/Folder", environ, resource_id=30, level=3)
-        with patch('webdav_for_filehold.folder_service.FolderService.remove_folder') as mock_rm:
+        with patch('webdav_server_for_filehold.folder_service.FolderService.remove_folder') as mock_rm:
             vf_folder.delete()
             mock_rm.assert_called_with("test_session", "http://localhost/FH/FileHold/", 30)
 
         # 4. Level 4 (Category)
         # Needs parent_resource_id
         vf_cat = VirtualFolder("/Cab/Drawer/Cat", environ, resource_id=40, level=4, parent_resource_id=20)
-        with patch('webdav_for_filehold.category_service.CategoryService.remove_category') as mock_rm:
+        with patch('webdav_server_for_filehold.category_service.CategoryService.remove_category') as mock_rm:
             vf_cat.delete()
             mock_rm.assert_called_with("test_session", "http://localhost/FH/FileHold/", 40, 20)
 
@@ -508,9 +508,9 @@ class TestDocumentUpdates(unittest.TestCase):
         doc_data.CanEdit = True
 
         # Mocks for dependencies
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_document_manager_client') as mock_get_dm, \
-             patch('webdav_for_filehold.client_factory.ClientFactory.get_document_finder_client') as mock_get_finder, \
-             patch('webdav_for_filehold.client_factory.ClientFactory.get_document_schema_manager_client') as mock_get_schema:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_manager_client') as mock_get_dm, \
+             patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_finder_client') as mock_get_finder, \
+             patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_schema_manager_client') as mock_get_schema:
 
             # Setup Schemas Mock
             mock_schema_mgr = MagicMock()

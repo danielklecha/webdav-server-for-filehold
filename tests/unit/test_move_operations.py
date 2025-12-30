@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from webdav_for_filehold.drawer_service import DrawerService
-from webdav_for_filehold.folder_service import FolderService
-from webdav_for_filehold.virtual_folder import VirtualFolder
+from webdav_server_for_filehold.drawer_service import DrawerService
+from webdav_server_for_filehold.folder_service import FolderService
+from webdav_server_for_filehold.virtual_folder import VirtualFolder
 
 class TestMoveOperations(unittest.TestCase):
 
@@ -18,7 +18,7 @@ class TestMoveOperations(unittest.TestCase):
             "wsgidav.provider": self.mock_provider
         }
 
-    @patch("webdav_for_filehold.drawer_service.ClientFactory")
+    @patch("webdav_server_for_filehold.drawer_service.ClientFactory")
     def test_move_drawer_success(self, MockClientFactory):
         # Setup mock
         mock_client = MagicMock()
@@ -35,7 +35,7 @@ class TestMoveOperations(unittest.TestCase):
             drawerId=10, destCabinetId=5
         )
 
-    @patch("webdav_for_filehold.folder_service.ClientFactory")
+    @patch("webdav_server_for_filehold.folder_service.ClientFactory")
     def test_move_folder_success(self, MockClientFactory):
         # Setup mock
         mock_client = MagicMock()
@@ -53,8 +53,8 @@ class TestMoveOperations(unittest.TestCase):
             folderId=100, destDrawerId=10, destCategoryId=0
         )
 
-    @patch("webdav_for_filehold.virtual_folder.DrawerService")
-    @patch("webdav_for_filehold.virtual_folder.VirtualFolder._refresh")
+    @patch("webdav_server_for_filehold.virtual_folder.DrawerService")
+    @patch("webdav_server_for_filehold.virtual_folder.VirtualFolder._refresh")
     def test_virtual_folder_move_drawer(self, mock_refresh, MockDrawerService):
         # Setup VirtualFolder for Drawer
         drawer_vf = VirtualFolder(
@@ -86,8 +86,8 @@ class TestMoveOperations(unittest.TestCase):
             self.session_id, self.base_url, 10, 5
         )
 
-    @patch("webdav_for_filehold.virtual_folder.FolderService")
-    @patch("webdav_for_filehold.virtual_folder.VirtualFolder._refresh")
+    @patch("webdav_server_for_filehold.virtual_folder.FolderService")
+    @patch("webdav_server_for_filehold.virtual_folder.VirtualFolder._refresh")
     def test_virtual_folder_move_folder(self, mock_refresh, MockFolderService):
         # Setup VirtualFolder for Folder
         folder_vf = VirtualFolder(
@@ -120,8 +120,8 @@ class TestMoveOperations(unittest.TestCase):
             self.session_id, self.base_url, 100, 10, 20
         )
 
-    @patch("webdav_for_filehold.virtual_folder.DrawerService")
-    @patch("webdav_for_filehold.virtual_folder.VirtualFolder._refresh")
+    @patch("webdav_server_for_filehold.virtual_folder.DrawerService")
+    @patch("webdav_server_for_filehold.virtual_folder.VirtualFolder._refresh")
     def test_virtual_folder_move_drawer_with_rename(self, mock_refresh, MockDrawerService):
         # Setup VirtualFolder for Drawer
         drawer_vf = VirtualFolder(
@@ -156,8 +156,8 @@ class TestMoveOperations(unittest.TestCase):
             self.session_id, self.base_url, 10, "RenamedDrawer", drawer_vf.dto_object
         )
 
-    @patch("webdav_for_filehold.virtual_folder.FolderService")
-    @patch("webdav_for_filehold.virtual_folder.VirtualFolder._refresh")
+    @patch("webdav_server_for_filehold.virtual_folder.FolderService")
+    @patch("webdav_server_for_filehold.virtual_folder.VirtualFolder._refresh")
     def test_virtual_folder_move_folder_with_rename(self, mock_refresh, MockFolderService):
         # Setup VirtualFolder for Folder
         folder_vf = VirtualFolder(

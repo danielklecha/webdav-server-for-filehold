@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from webdav_for_filehold.document_service import DocumentService
+from webdav_server_for_filehold.document_service import DocumentService
 
 class MockDocumentData:
     def __init__(self, document_id, name, extension=""):
@@ -16,7 +16,7 @@ class MockColumnsWithValues:
 
 @pytest.fixture
 def mock_doc_data_service():
-    with patch('webdav_for_filehold.document_service.DocumentDataService') as mock:
+    with patch('webdav_server_for_filehold.document_service.DocumentDataService') as mock:
         def get_name(doc_data, columns):
             return doc_data.Name
             

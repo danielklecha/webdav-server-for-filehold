@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from webdav_for_filehold.document_service import DocumentService
+from webdav_server_for_filehold.document_service import DocumentService
 
 
 class TestUpdateDocument(unittest.TestCase):
@@ -29,9 +29,9 @@ class TestUpdateDocument(unittest.TestCase):
         new_name = "MyDoc_Renamed"
 
         # Mocks for clients
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_document_schema_manager_client') as mock_schema_mgr, \
-             patch('webdav_for_filehold.client_factory.ClientFactory.get_document_finder_client') as mock_finder, \
-             patch('webdav_for_filehold.client_factory.ClientFactory.get_document_manager_client') as mock_doc_mgr:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_schema_manager_client') as mock_schema_mgr, \
+             patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_finder_client') as mock_finder, \
+             patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_manager_client') as mock_doc_mgr:
 
             # 1. Schema Manager mocks
             mock_schema_service = mock_schema_mgr.return_value.service

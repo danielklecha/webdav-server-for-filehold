@@ -4,9 +4,9 @@ import requests
 from zeep import Client
 from zeep.transports import Transport
 from typing import Generator, Any
-from webdav_for_filehold.provider import CustomProvider
-from webdav_for_filehold.client_factory import ClientFactory
-from webdav_for_filehold.cabinet_service import CabinetService
+from webdav_server_for_filehold.provider import CustomProvider
+from webdav_server_for_filehold.client_factory import ClientFactory
+from webdav_server_for_filehold.cabinet_service import CabinetService
 
 # Configuration from environment variables
 FILEHOLD_URL = os.environ.get("FILEHOLD_URL", "http://localhost/FH/FileHold/")

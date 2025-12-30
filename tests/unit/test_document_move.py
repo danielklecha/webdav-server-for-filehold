@@ -1,9 +1,9 @@
 
 import unittest
 from unittest.mock import MagicMock, patch
-from webdav_for_filehold.document_service import DocumentService
-from webdav_for_filehold.virtual_file import VirtualFile
-from webdav_for_filehold.virtual_folder import VirtualFolder
+from webdav_server_for_filehold.document_service import DocumentService
+from webdav_server_for_filehold.virtual_file import VirtualFile
+from webdav_server_for_filehold.virtual_folder import VirtualFolder
 
 class TestDocumentMove(unittest.TestCase):
 
@@ -21,7 +21,7 @@ class TestDocumentMove(unittest.TestCase):
         self.document_data.MetadataVersionId = 456
         self.document_data.SnapshotId = "snapshot_guid"
 
-    @patch("webdav_for_filehold.document_service.ClientFactory")
+    @patch("webdav_server_for_filehold.document_service.ClientFactory")
     def test_move_document_success(self, MockClientFactory):
         # Setup mock
         mock_client = MagicMock()
@@ -43,7 +43,7 @@ class TestDocumentMove(unittest.TestCase):
             mock_selection.assert_called_once_with(mock_client, self.document_data, "snap123")
             mock_client.service.Move.assert_called_once_with("selection_guid", 10)
 
-    @patch("webdav_for_filehold.virtual_file.DocumentService")
+    @patch("webdav_server_for_filehold.virtual_file.DocumentService")
     def test_virtual_file_info_moved(self, MockDocumentService):
         # Setup VirtualFile
         v_file = VirtualFile(
@@ -79,7 +79,7 @@ class TestDocumentMove(unittest.TestCase):
         # Verify no rename happened
         MockDocumentService.update_document.assert_not_called()
 
-    @patch("webdav_for_filehold.virtual_file.DocumentService")
+    @patch("webdav_server_for_filehold.virtual_file.DocumentService")
     def test_virtual_file_move_and_rename(self, MockDocumentService):
         # Setup VirtualFile
         v_file = VirtualFile(
@@ -115,7 +115,7 @@ class TestDocumentMove(unittest.TestCase):
         self.assertEqual(v_file.name, "new_doc.txt")
         self.assertEqual(v_file.metadata_version_id, 1001)
 
-    @patch("webdav_for_filehold.virtual_file.DocumentService")
+    @patch("webdav_server_for_filehold.virtual_file.DocumentService")
     def test_virtual_file_move_invalid_destination(self, MockDocumentService):
         # Setup VirtualFile
         v_file = VirtualFile(

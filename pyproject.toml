@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "webdav-for-filehold"
+name = "webdav-server-for-filehold"
 version = "1.0.0"
 description = "WebDAV for FileHold"
 readme = "README.md"
@@ -24,7 +24,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
 ]
-urls = { Repository = "https://github.com/danielklecha/webdav-for-filehold" }
+urls = { Repository = "https://github.com/danielklecha/webdav-server-for-filehold" }
 dependencies = [
     "wsgidav",
     "cheroot",
@@ -33,10 +33,10 @@ dependencies = [
 ]
 
 [project.scripts]
-webdav-for-filehold = "webdav_for_filehold.main:run"
+webdav-server-for-filehold = "webdav_server_for_filehold.main:run"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/webdav_for_filehold"]
+packages = ["src/webdav_server_for_filehold"]
 
 [tool.hatch.envs.default]
 dependencies = [

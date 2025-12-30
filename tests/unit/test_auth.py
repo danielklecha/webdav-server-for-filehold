@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 from typing import Dict, Any
-from webdav_for_filehold.auth import CustomDomainController
+from webdav_server_for_filehold.auth import CustomDomainController
 
 
 class TestCustomDomainController(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestCustomDomainController(unittest.TestCase):
         self.auth = CustomDomainController(MagicMock(), self.config)
         self.environ: Dict[str, Any] = {}
 
-    @patch('webdav_for_filehold.auth.Client')
+    @patch('webdav_server_for_filehold.auth.Client')
     def test_basic_auth_user_success_no_cache(self, MockClient: MagicMock) -> None:
         """
         Test basic authentication success when user is not in cache.
@@ -46,7 +46,7 @@ class TestCustomDomainController(unittest.TestCase):
         expected_hash = hashlib.sha256(b"pass").digest()
         self.assertEqual(self.auth._session_cache["user"]["password_hash"], expected_hash)
 
-    @patch('webdav_for_filehold.auth.Client')
+    @patch('webdav_server_for_filehold.auth.Client')
     def test_basic_auth_user_success_cache_hit(self, MockClient: MagicMock) -> None:
         """
         Test basic authentication success when user is in cache.
@@ -71,7 +71,7 @@ class TestCustomDomainController(unittest.TestCase):
         # GetSessionInfo called to verify
         mock_client.service.GetSessionInfo.assert_any_call(sessionId="session_old")
 
-    @patch('webdav_for_filehold.auth.Client')
+    @patch('webdav_server_for_filehold.auth.Client')
     def test_basic_auth_user_cache_invalid_password(self, MockClient: MagicMock) -> None:
         """
         Test basic authentication failure when user is in cache but password is invalid.
@@ -94,7 +94,7 @@ class TestCustomDomainController(unittest.TestCase):
         # StartSession SHOULD be called because cache password didn't match
         mock_client.service.StartSession.assert_called_with("user", "wrong_pass", "CustomClient")
 
-    @patch('webdav_for_filehold.auth.Client')
+    @patch('webdav_server_for_filehold.auth.Client')
     def test_basic_auth_user_cache_expired_session(self, MockClient: MagicMock) -> None:
         """
         Test basic authentication when user is in cache but session is expired.
@@ -135,7 +135,7 @@ class TestCustomDomainController(unittest.TestCase):
         self.assertFalse(self.auth._is_secret_valid(None, stored_hash))
         self.assertFalse(self.auth._is_secret_valid("secret", None))
 
-    @patch('webdav_for_filehold.auth.Client')
+    @patch('webdav_server_for_filehold.auth.Client')
     def test_basic_auth_domain_user(self, MockClient: MagicMock) -> None:
         """
         Test basic authentication for a domain user.
@@ -161,7 +161,7 @@ class TestCustomDomainController(unittest.TestCase):
         mock_client.service.GetStoredDomains.assert_called_once()
         mock_client.service.StartSessionForDomainUser.assert_called_with("user", "pass", 123, "CustomClient")
 
-    @patch('webdav_for_filehold.auth.Client')
+    @patch('webdav_server_for_filehold.auth.Client')
     def test_basic_auth_local_domain_user(self, MockClient: MagicMock) -> None:
         """
         Test basic authentication for a local domain user.

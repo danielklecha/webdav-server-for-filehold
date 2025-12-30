@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock
-from webdav_for_filehold.library_object_service import LibraryObjectService
+from webdav_server_for_filehold.library_object_service import LibraryObjectService
 
 
 class TestLibraryObjectService(unittest.TestCase):

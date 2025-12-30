@@ -2,10 +2,10 @@ import unittest
 from unittest.mock import MagicMock, patch
 from typing import Dict, Any
 
-from webdav_for_filehold.virtual_folder import VirtualFolder
-from webdav_for_filehold.cabinet_service import CabinetService
-from webdav_for_filehold.drawer_service import DrawerService
-from webdav_for_filehold.folder_service import FolderService
+from webdav_server_for_filehold.virtual_folder import VirtualFolder
+from webdav_server_for_filehold.cabinet_service import CabinetService
+from webdav_server_for_filehold.drawer_service import DrawerService
+from webdav_server_for_filehold.folder_service import FolderService
 
 
 class TestUpdateOperations(unittest.TestCase):
@@ -29,7 +29,7 @@ class TestUpdateOperations(unittest.TestCase):
 
         mock_client = MagicMock()
 
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client', return_value=mock_client):
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client', return_value=mock_client):
             result = CabinetService.update_cabinet(session_id, base_url, cabinet_id, new_name, mock_cabinet)
 
             self.assertTrue(result)
@@ -72,7 +72,7 @@ class TestUpdateOperations(unittest.TestCase):
 
         mock_client = MagicMock()
 
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client', return_value=mock_client):
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client', return_value=mock_client):
             result = DrawerService.update_drawer(session_id, base_url, drawer_id, new_name, mock_drawer)
 
             self.assertTrue(result)
@@ -113,7 +113,7 @@ class TestUpdateOperations(unittest.TestCase):
 
         destination = "/Cab/Drawer Renamed"
 
-        with patch('webdav_for_filehold.drawer_service.DrawerService.update_drawer') as mock_update:
+        with patch('webdav_server_for_filehold.drawer_service.DrawerService.update_drawer') as mock_update:
             vf.handle_move(destination)
 
             mock_update.assert_called_once()
@@ -138,7 +138,7 @@ class TestUpdateOperations(unittest.TestCase):
 
         mock_client = MagicMock()
 
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client', return_value=mock_client):
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client', return_value=mock_client):
             result = FolderService.update_folder(session_id, base_url, folder_id, new_name, mock_folder)
 
             self.assertTrue(result)
@@ -179,7 +179,7 @@ class TestUpdateOperations(unittest.TestCase):
 
         destination = "/Cab/Drawer/Folder Renamed"
 
-        with patch('webdav_for_filehold.folder_service.FolderService.update_folder') as mock_update:
+        with patch('webdav_server_for_filehold.folder_service.FolderService.update_folder') as mock_update:
             vf.handle_move(destination)
 
             mock_update.assert_called_once()
@@ -206,7 +206,7 @@ class TestUpdateOperations(unittest.TestCase):
         # Mock UpdateCabinet to raise Exception
         mock_client.service.UpdateCabinet.side_effect = Exception("SOAP Error")
 
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client', return_value=mock_client):
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client', return_value=mock_client):
             with self.assertRaises(Exception):
                 CabinetService.update_cabinet(session_id, base_url, cabinet_id, new_name, mock_cabinet)
 
@@ -231,7 +231,7 @@ class TestUpdateOperations(unittest.TestCase):
         # Mock UpdateDrawer to raise Exception
         mock_client.service.UpdateDrawer.side_effect = Exception("SOAP Error")
 
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client', return_value=mock_client):
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client', return_value=mock_client):
             with self.assertRaises(Exception):
                 DrawerService.update_drawer(session_id, base_url, drawer_id, new_name, mock_drawer)
 

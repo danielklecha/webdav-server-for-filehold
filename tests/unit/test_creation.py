@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from webdav_for_filehold.cabinet_service import CabinetService
-from webdav_for_filehold.drawer_service import DrawerService
+from webdav_server_for_filehold.cabinet_service import CabinetService
+from webdav_server_for_filehold.drawer_service import DrawerService
 
 
 class TestCreation(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestCreation(unittest.TestCase):
         """
         Test successful addition of a cabinet.
         """
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
             mock_service = MagicMock()
             mock_get_client.return_value.service = mock_service
 
@@ -43,7 +43,7 @@ class TestCreation(unittest.TestCase):
         """
         Test failure when AddCabinet returns no response.
         """
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
             mock_service = MagicMock()
             mock_get_client.return_value.service = mock_service
 
@@ -59,7 +59,7 @@ class TestCreation(unittest.TestCase):
         """
         Test successful addition of a drawer.
         """
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
             mock_service = MagicMock()
             mock_get_client.return_value.service = mock_service
 

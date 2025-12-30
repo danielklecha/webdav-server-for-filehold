@@ -1,7 +1,7 @@
 from unittest.mock import patch
 from io import IOBase
 from typing import Any, Optional, Generator
-from webdav_for_filehold.download_stream import DownloadStream
+from webdav_server_for_filehold.download_stream import DownloadStream
 
 
 class MockResponse:

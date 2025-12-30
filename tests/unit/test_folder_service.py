@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from webdav_for_filehold.folder_service import FolderService
+from webdav_server_for_filehold.folder_service import FolderService
 
 
 class TestFolderService(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestFolderService(unittest.TestCase):
         """
         Test adding a folder structure (folder within a drawer).
         """
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
             mock_service = MagicMock()
             mock_get_client.return_value.service = mock_service
             mock_service.AddFolder.return_value = 100
@@ -37,8 +37,8 @@ class TestFolderService(unittest.TestCase):
         """
         Test adding a folder with a default schema specified.
         """
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_lib_client, \
-             patch('webdav_for_filehold.folder_service.FolderService.get_schema_id_by_name', return_value=99) as mock_get_schema:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_lib_client, \
+             patch('webdav_server_for_filehold.folder_service.FolderService.get_schema_id_by_name', return_value=99) as mock_get_schema:
 
             mock_service = MagicMock()
             mock_lib_client.return_value.service = mock_service
@@ -61,7 +61,7 @@ class TestFolderService(unittest.TestCase):
         """
         Test updating a folder's properties.
         """
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
             mock_service = MagicMock()
             mock_get_client.return_value.service = mock_service
 
@@ -79,7 +79,7 @@ class TestFolderService(unittest.TestCase):
         """
         Test removing a folder.
         """
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_library_structure_manager_client') as mock_get_client:
             mock_service = MagicMock()
             mock_get_client.return_value.service = mock_service
 
@@ -92,7 +92,7 @@ class TestFolderService(unittest.TestCase):
         """
         Test retrieving schema ID by name.
         """
-        with patch('webdav_for_filehold.client_factory.ClientFactory.get_document_schema_manager_client') as mock_get_client:
+        with patch('webdav_server_for_filehold.client_factory.ClientFactory.get_document_schema_manager_client') as mock_get_client:
             mock_service = MagicMock()
             mock_get_client.return_value.service = mock_service
 

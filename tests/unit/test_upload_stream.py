@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch, ANY
 from typing import Dict, Any
-from webdav_for_filehold.upload_stream import UploadStream
+from webdav_server_for_filehold.upload_stream import UploadStream
 
 
 class TestUploadStream(unittest.TestCase):
@@ -25,10 +25,10 @@ class TestUploadStream(unittest.TestCase):
         self.file_size = 5000  # 5KB
 
         # Patch DocumentService methods
-        self.create_token_patcher = patch('webdav_for_filehold.document_service.DocumentService.create_upload_token')
-        self.upload_chunk_patcher = patch('webdav_for_filehold.document_service.DocumentService.upload_chunk')
-        self.add_document_patcher = patch('webdav_for_filehold.document_service.DocumentService.add_document')
-        self.replace_doc_patcher = patch('webdav_for_filehold.document_service.DocumentService.replace_document_content')
+        self.create_token_patcher = patch('webdav_server_for_filehold.document_service.DocumentService.create_upload_token')
+        self.upload_chunk_patcher = patch('webdav_server_for_filehold.document_service.DocumentService.upload_chunk')
+        self.add_document_patcher = patch('webdav_server_for_filehold.document_service.DocumentService.add_document')
+        self.replace_doc_patcher = patch('webdav_server_for_filehold.document_service.DocumentService.replace_document_content')
 
         self.mock_create_token = self.create_token_patcher.start()
         self.mock_upload_chunk = self.upload_chunk_patcher.start()

@@ -42,7 +42,7 @@ The application is built on top of **WsgiDAV**, a WSGI-based WebDAV server for P
 
 ### Environment Setup
 -   **Build**: `hatch build`.
--   **Run**: `hatch run webdav-for-filehold`.
+-   **Run**: `hatch run webdav-server-for-filehold`.
 
 ### Testing
 Tests are located in `tests/`.
