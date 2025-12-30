@@ -18,6 +18,7 @@ class TestUpdateDocument(unittest.TestCase):
         base_url = "http://host"
 
         doc_data = MagicMock()
+        del doc_data.DocumentData
         doc_data.CanEdit = True
         doc_data.DocumentId = 100
         doc_data.DocumentSchemaId = 10

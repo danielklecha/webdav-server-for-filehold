@@ -500,6 +500,7 @@ class TestDocumentUpdates(unittest.TestCase):
         Test document renaming logic under various conditions.
         """
         doc_data = MagicMock()
+        del doc_data.DocumentData
         doc_data.DocumentId = 1
         doc_data.MetadataVersionId = 100
         doc_data.DocumentSchemaId = 5

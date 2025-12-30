@@ -20,6 +20,7 @@ class TestDocumentUpdate(unittest.TestCase):
 
         # Mock Document Data
         mock_doc_data = MagicMock()
+        del mock_doc_data.DocumentData
         mock_doc_data.CanEdit = True
         mock_doc_data.DocumentId = 100
         mock_doc_data.DocumentSchemaId = 1
@@ -132,11 +133,15 @@ class TestDocumentUpdate(unittest.TestCase):
         Test that updating a document fails if the user doesn't have edit permissions.
         """
         mock_doc_data = MagicMock()
+        del mock_doc_data.DocumentData
         mock_doc_data.CanEdit = False
 
-        with self.assertRaises(Exception) as cm:
-            DocumentService.update_document("sess", "url", mock_doc_data, "name")
-        self.assertIn("cannot edit document", str(cm.exception))
+        with patch('webdav_for_filehold.client_factory.ClientFactory.get_document_manager_client'), \
+             patch('webdav_for_filehold.client_factory.ClientFactory.get_document_finder_client'), \
+             patch('webdav_for_filehold.client_factory.ClientFactory.get_document_schema_manager_client'):
+            with self.assertRaises(Exception) as cm:
+                DocumentService.update_document("sess", "url", mock_doc_data, "name")
+            self.assertIn("cannot edit document", str(cm.exception))
 
     def test_update_document_bad_vc_field(self) -> None:
         """
