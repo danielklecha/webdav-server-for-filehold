@@ -2,13 +2,10 @@
 
 ## Development
 
-- `hatch env create`: Create virtual environment.
-- `hatch shell`: Enter the environment.
-- `hatch run webdav-server-for-filehold`: Run the server.
-- `hatch build`: Build the package.
-- `hatch clean`: Clean up the environment.
-- `hatch run cov`: Run tests with coverage reporting.
-- `hatch env prune`: Prune the environment.
+- `uv sync`: Create virtual environment and install dependencies.
+- `uv run webdav-server-for-filehold`: Run the server.
+- `uv build`: Build the package.
+- `uv run cov`: Run tests with coverage reporting.
 
 ## Testing
 
@@ -17,7 +14,7 @@
 To run the unit tests, use the following command:
 
 ```bash
-hatch test tests/unit
+uv run pytest tests/unit
 ```
 
 ### End-to-End (E2E) Tests
@@ -26,7 +23,7 @@ E2E tests require a running instance of FileHold and a valid user account.
 
 ```powershell
 $env:FILEHOLD_PASSWORD="your_password"
-hatch test tests/e2e
+uv run pytest tests/e2e
 ```
 
 **Environment Variables:**
@@ -40,7 +37,7 @@ hatch test tests/e2e
 To run tests with coverage reporting:
 
 ```bash
-hatch run cov
+uv run pytest --cov=webdav_server_for_filehold --cov-report=term-missing
 ```
 
 ## Code Style

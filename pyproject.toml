@@ -38,19 +38,11 @@ webdav-server-for-filehold = "webdav_server_for_filehold.main:run"
 [tool.hatch.build.targets.wheel]
 packages = ["src/webdav_server_for_filehold"]
 
-[tool.hatch.envs.default]
-dependencies = [
+[dependency-groups]
+dev = [
   "pytest",
   "pytest-mock",
   "pytest-cov",
   "ruff",
   "black",
-]
-
-[tool.hatch.envs.default.scripts]
-cov = "pytest --cov=webdav_server_for_filehold --cov-report=term-missing"
-
-[tool.hatch.envs.hatch-test]
-extra-dependencies = [
-  "pytest-mock",
 ]
