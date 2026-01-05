@@ -2,7 +2,7 @@ import logging
 import mimetypes
 import os
 from io import BytesIO
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from wsgidav.dav_provider import DAVNonCollection
 
@@ -170,6 +170,61 @@ class VirtualFile(DAVNonCollection):
             logger.debug(f"get_display_name called for {self.path}")
             return self.name
         return os.path.basename(self.path)
+
+    def _get_owner(self) -> Optional[str]:
+        """
+        Get the owner of the document.
+
+        Returns:
+            The name of the owner, or None if not found.
+        """
+        if not self.dto_object or not self.dto_object.Columns or not self.dto_object.DocumentData:
+            return None
+
+        try:
+            fields = self.dto_object.Columns.FieldDefinition
+            doc_data = self.dto_object.DocumentData[0]
+
+            # SystemFieldId -26 is Owner
+            val = DocumentDataService.get_field_value(doc_data, fields, -26)
+
+            if val:
+                return str(val)
+
+        except Exception as e:
+            logger.error(f"Error getting owner for {self.path}: {e}")
+
+        return None
+
+    def get_property_value(self, name: str) -> Any:
+        """
+        Get the value of a property.
+        
+        Args:
+            name: The name of the property (e.g. "{DAV:}owner").
+            
+        Returns:
+            The value of the property, or None if not found.
+        """
+        logger.debug(f"get_property_value called for {self.path}, name: {name}")
+        if name == "{DAV:}owner":
+            return self._get_owner()
+            
+        return super().get_property_value(name)
+
+    def get_property_names(self, is_allprop: bool) -> List[str]:
+        """
+        Get the list of supported property names.
+        
+        Args:
+            is_allprop: True if all properties are requested.
+            
+        Returns:
+            A list of property names.
+        """
+        prop_names = super().get_property_names(is_allprop=is_allprop)
+        prop_names.append("{DAV:}owner")
+        return prop_names
 
     def get_etag(self) -> None:
         """
