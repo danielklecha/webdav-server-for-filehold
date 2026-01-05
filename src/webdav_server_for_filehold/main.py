@@ -30,12 +30,16 @@ def _parse_arguments() -> argparse.Namespace:
         help="Port to bind to (default: 8080)"
     )
     parser.add_argument(
-        "--verbose",
-        type=int,
-        choices=[0, 1, 2, 3],
-        default=3,
-        help="Logging verbosity (0=ERROR, 1=WARNING, 2=INFO, 3=DEBUG)"
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable debug logging for the application"
     )
+    parser.add_argument(
+        "-vv", "--very-verbose",
+        action="store_true",
+        help="Enable debug logging for everything (including libraries)"
+    )
+
     parser.add_argument(
         "--filehold-url",
         default="http://localhost/FH/FileHold/",
@@ -62,25 +66,42 @@ def _parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _configure_logging(verbose: int) -> None:
+def _configure_logging(verbose: bool, very_verbose: bool) -> None:
     """
-    Configures logging based on verbosity level.
+    Configures logging based on verbosity flags.
+    
+    Rules:
+    - Default: INFO for all.
+    - verbose (-v): DEBUG for App, INFO for others.
+    - very_verbose (-vv): DEBUG for all.
+    """
+    root_level = logging.INFO
+    app_level = logging.INFO
 
-    Args:
-        verbose (int): The verbosity level (0-3).
-    """
-    log_level_map = {
-        0: logging.ERROR,
-        1: logging.WARNING,
-        2: logging.INFO,
-        3: logging.DEBUG
-    }
-    log_level = log_level_map.get(verbose, logging.DEBUG)
+    if very_verbose:
+        root_level = logging.DEBUG
+        app_level = logging.DEBUG
+    elif verbose:
+        root_level = logging.INFO
+        app_level = logging.DEBUG
+
+    # Configure root logger
     logging.basicConfig(
-        level=log_level,
+        level=root_level,
         format='%(asctime)s.%(msecs)03d - %(levelname)-8s: %(message)s',
         datefmt='%H:%M:%S'
     )
+
+    # Configure App logger specifically to ensure it gets DEBUG if requested
+    # We assume the package name is what's used for loggers
+    logging.getLogger("webdav_server_for_filehold").setLevel(app_level)
+    
+    # If using -v (not -vv), ensure WsgiDAV and others don't leak into DEBUG if they rely on root
+    # (basicConfig sets root level, which they inherit. If root is INFO, they match INFO).
+    
+    # Explicitly silence some noisy libraries if we are NOT in very_verbose mode?
+    # No, INFO is standard. If they adhere to INFO, it's fine.
+
 
 
 def _create_app_config(args: argparse.Namespace) -> typing.Dict[str, typing.Any]:
@@ -112,7 +133,7 @@ def _create_app_config(args: argparse.Namespace) -> typing.Dict[str, typing.Any]
             "accept_digest": False,
             "default_to_digest": False,
         },
-        "verbose": args.verbose,
+        "verbose": 3 if args.very_verbose else 2,
         "host": args.host,
         "port": args.port,
         "filehold_url": filehold_url  # Pass to DC via config
@@ -156,7 +177,7 @@ def run() -> None:
     Parses arguments, configures logging, and starts the WsgiDAV app.
     """
     args = _parse_arguments()
-    _configure_logging(args.verbose)
+    _configure_logging(args.verbose, args.very_verbose)
     config = _create_app_config(args)
     _start_server(config, args.ssl_cert, args.ssl_key)
 

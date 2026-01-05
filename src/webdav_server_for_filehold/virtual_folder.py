@@ -271,18 +271,16 @@ class VirtualFolder(DAVCollection):
 
     def _get_drawers(self, client: Any) -> List["VirtualFolder"]:
         """Fetches and returns the list of drawers in the current cabinet."""
-        current_filehold_object = self.dto_object
-
         if (
-            current_filehold_object
-            and hasattr(current_filehold_object, "Drawers")
-            and current_filehold_object.Drawers
+            self.dto_object
+            and hasattr(self.dto_object, "Drawers")
+            and self.dto_object.Drawers
         ):
             drawers_list = []
-            if hasattr(current_filehold_object.Drawers, "Drawer"):
-                drawers_list = current_filehold_object.Drawers.Drawer
-            elif isinstance(current_filehold_object.Drawers, list):
-                drawers_list = current_filehold_object.Drawers
+            if hasattr(self.dto_object.Drawers, "Drawer"):
+                drawers_list = self.dto_object.Drawers.Drawer
+            elif isinstance(self.dto_object.Drawers, list):
+                drawers_list = self.dto_object.Drawers
             if not isinstance(drawers_list, list) and drawers_list is not None:
                 drawers_list = [drawers_list]
 

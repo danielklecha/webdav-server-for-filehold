@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 from wsgidav.dav_provider import DAVNonCollection
 
 from .document_service import DocumentService
+from .document_data_service import DocumentDataService
 from .upload_stream import UploadStream
 
 logger = logging.getLogger(__name__)
@@ -132,14 +133,30 @@ class VirtualFile(DAVNonCollection):
                 return mime_type
         return "application/octet-stream"
 
-    def get_creation_date(self) -> None:
+    def get_creation_date(self) -> Optional[float]:
         """
         Get the creation date of the file.
 
         Returns:
-            None (not implemented).
+            The creation timestamp or None.
         """
         logger.debug(f"get_creation_date called for {self.path}")
+        if not self.dto_object or not self.dto_object.Columns or not self.dto_object.DocumentData:
+            return None
+
+        try:
+            fields = self.dto_object.Columns.FieldDefinition
+            doc_data = self.dto_object.DocumentData[0]
+            
+            # SystemFieldId -31 is Creation Date
+            val = DocumentDataService.get_field_value(doc_data, fields, -31)
+            
+            if val and hasattr(val, 'timestamp'):
+                return val.timestamp()
+                
+        except Exception as e:
+            logger.error(f"Error getting creation date for {self.path}: {e}")
+
         return None
 
     def get_display_name(self) -> str:
@@ -164,14 +181,30 @@ class VirtualFile(DAVNonCollection):
         logger.debug(f"get_etag called for {self.path}")
         return None
 
-    def get_last_modified(self) -> None:
+    def get_last_modified(self) -> Optional[float]:
         """
         Get the last modified timestamp.
 
         Returns:
-            None (not implemented).
+            The last modified timestamp or None.
         """
         logger.debug(f"get_last_modified called for {self.path}")
+        if not self.dto_object or not self.dto_object.Columns or not self.dto_object.DocumentData:
+            return None
+
+        try:
+            fields = self.dto_object.Columns.FieldDefinition
+            doc_data = self.dto_object.DocumentData[0]
+
+            # SystemFieldId -12 is Last Modified Date
+            val = DocumentDataService.get_field_value(doc_data, fields, -12)
+
+            if val and hasattr(val, 'timestamp'):
+                return val.timestamp()
+
+        except Exception as e:
+            logger.error(f"Error getting last modified date for {self.path}: {e}")
+
         return None
 
     def support_ranges(self) -> bool:
