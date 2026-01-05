@@ -44,5 +44,5 @@ dev = [
   "pytest-mock",
   "pytest-cov",
   "ruff",
-  "black",
+
 ]

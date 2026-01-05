@@ -5,7 +5,6 @@
 - `uv sync`: Create virtual environment and install dependencies.
 - `uv run webdav-server-for-filehold`: Run the server.
 - `uv build`: Build the package.
-- `uv run cov`: Run tests with coverage reporting.
 
 ## Testing
 
@@ -32,6 +31,7 @@ uv run pytest tests/e2e
 - `FILEHOLD_USERNAME`: Username (default: `sysadm`).
 - `FILEHOLD_PASSWORD`: Password (REQUIRED).
 
+
 ### Coverage
 
 To run tests with coverage reporting:
@@ -42,4 +42,16 @@ uv run pytest --cov=webdav_server_for_filehold --cov-report=term-missing
 
 ## Code Style
 
-This project uses `ruff` and `black` for code style.
+This project uses `ruff` for code style.
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+```
+
+To automatically fix standard style issues:
+
+```bash
+uv run ruff format .
+uv run ruff check --fix .
+```
