@@ -7,7 +7,7 @@ name = "webdav-server-for-filehold"
 version = "1.0.0"
 description = "WebDAV for FileHold"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.14"
 license = { file = "LICENSE" }
 authors = [
   { name = "Daniel Klecha", email = "daniel.klecha@gmail.com" },

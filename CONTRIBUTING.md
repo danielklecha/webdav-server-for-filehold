@@ -8,6 +8,7 @@
 - `hatch build`: Build the package.
 - `hatch clean`: Clean up the environment.
 - `hatch run cov`: Run tests with coverage reporting.
+- `hatch env prune`: Prune the environment.
 
 ## Testing
 
