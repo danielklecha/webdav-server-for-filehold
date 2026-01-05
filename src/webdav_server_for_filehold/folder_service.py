@@ -62,7 +62,7 @@ class FolderService(LibraryObjectService):
                 )
                 if found_id:
                     default_schema_id = found_id
-                    logger.info(
+                    logger.debug(
                         "Resolved default schema '%s' to Id: %s",
                         default_schema_name, default_schema_id
                     )

@@ -69,6 +69,7 @@ class VirtualFile(DAVNonCollection):
         Returns:
             An UploadStream instance to handle the upload.
         """
+        logger.debug(f"begin_write called for {self.path}, content_type: {content_type}")
         parent_cabinet_id = (
             getattr(self.parent_object, "ParentCabinetId", 0)
             if self.parent_object
@@ -96,6 +97,7 @@ class VirtualFile(DAVNonCollection):
         Args:
             upload_token: The token identifying the upload.
         """
+        logger.debug(f"on_upload_complete called for {self.path}, token: {upload_token}")
         DocumentService.save_document(
             self.environ,
             self.parent_object,
@@ -113,6 +115,7 @@ class VirtualFile(DAVNonCollection):
         Returns:
             The size of the file in bytes, or None if unknown.
         """
+        logger.debug(f"get_content_length called for {self.path}")
         return self.file_size
 
     def get_content_type(self) -> str:
@@ -123,6 +126,7 @@ class VirtualFile(DAVNonCollection):
             The MIME type string.
         """
         if self.name:
+            logger.debug(f"get_content_type called for {self.path}")
             mime_type, _ = mimetypes.guess_type(self.name)
             if mime_type:
                 return mime_type
@@ -135,6 +139,7 @@ class VirtualFile(DAVNonCollection):
         Returns:
             None (not implemented).
         """
+        logger.debug(f"get_creation_date called for {self.path}")
         return None
 
     def get_display_name(self) -> str:
@@ -145,6 +150,7 @@ class VirtualFile(DAVNonCollection):
             The name of the file.
         """
         if self.name:
+            logger.debug(f"get_display_name called for {self.path}")
             return self.name
         return os.path.basename(self.path)
 
@@ -155,6 +161,7 @@ class VirtualFile(DAVNonCollection):
         Returns:
             None (not implemented).
         """
+        logger.debug(f"get_etag called for {self.path}")
         return None
 
     def get_last_modified(self) -> None:
@@ -164,6 +171,7 @@ class VirtualFile(DAVNonCollection):
         Returns:
             None (not implemented).
         """
+        logger.debug(f"get_last_modified called for {self.path}")
         return None
 
     def support_ranges(self) -> bool:
@@ -173,6 +181,7 @@ class VirtualFile(DAVNonCollection):
         Returns:
             False.
         """
+        logger.debug(f"support_ranges called for {self.path}")
         return False
 
     def support_etag(self) -> bool:
@@ -182,6 +191,7 @@ class VirtualFile(DAVNonCollection):
         Returns:
             False.
         """
+        logger.debug(f"support_etag called for {self.path}")
         return False
 
     def get_content(self) -> Union[BytesIO, Any]:
@@ -191,6 +201,7 @@ class VirtualFile(DAVNonCollection):
         Returns:
             A file-like object containing the file content.
         """
+        logger.debug(f"get_content called for {self.path}")
         session_id, base_url = self._get_session_context()
 
         if not session_id:
@@ -227,7 +238,7 @@ class VirtualFile(DAVNonCollection):
         Raises:
             Exception: If document data is not available.
         """
-        logger.info(f"delete called for {self.path}")
+        logger.debug(f"delete called for {self.path}")
         if not self.dto_object:
             raise Exception("Cannot delete document: Document data not available")
 
@@ -250,6 +261,7 @@ class VirtualFile(DAVNonCollection):
         Raises:
             Exception: If moving to a different folder or if document data is missing.
         """
+        logger.debug(f"handle_move called for {self.path} to {dest_path}")
         new_name = os.path.basename(dest_path.rstrip("/"))
         logger.info(
             f"handle_move called for file {self.path}. Dest: {dest_path}, New name: {new_name}"
@@ -316,6 +328,7 @@ class VirtualFile(DAVNonCollection):
         Returns:
             True always.
         """
+        logger.debug(f"support_recursive_move called for {self.path}")
         return True
 
     def move_recursive(self, dest_path: str) -> None:
@@ -325,4 +338,5 @@ class VirtualFile(DAVNonCollection):
         Args:
             dest_path: The destination path.
         """
+        logger.debug(f"move_recursive called for {self.path} to {dest_path}")
         self.handle_move(dest_path)

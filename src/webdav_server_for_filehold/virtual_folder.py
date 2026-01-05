@@ -65,6 +65,7 @@ class VirtualFolder(DAVCollection):
         Returns:
             The name of the folder, or an empty string if it is the root.
         """
+        logger.debug(f"get_display_name called for {self.path}")
         if self.name:
             return self.name
         if self.path == "/":
@@ -79,6 +80,7 @@ class VirtualFolder(DAVCollection):
         Returns:
             A list of child resources.
         """
+        logger.debug(f"get_member_list called for {self.path}")
         session_id = self.environ.get("filehold.session_id")
         base_url = self.environ.get("filehold.url", "http://localhost/FH/FileHold/")
 
@@ -121,6 +123,7 @@ class VirtualFolder(DAVCollection):
         Raises:
             Exception: If no session ID is found or if deletion fails.
         """
+        logger.debug(f"delete called for {self.path}")
         session_id = self.environ.get("filehold.session_id")
         base_url = self.environ.get("filehold.url", "http://localhost/FH/FileHold/")
 
@@ -415,6 +418,7 @@ class VirtualFolder(DAVCollection):
         self, session_id: str, base_url: str
     ) -> List[VirtualFile]:
         """Fetches and returns files within the current folder."""
+        logger.debug(f"_get_documents called for {self.path}")
         try:
             snapshot_id, result = DocumentService.get_documents_with_fields(
                 session_id, base_url, self.resource_id
@@ -455,6 +459,7 @@ class VirtualFolder(DAVCollection):
         Returns:
             List of names of child resources.
         """
+        logger.debug(f"get_member_names called for {self.path}")
         return [r.get_display_name() for r in self.get_member_list()]
 
     def _create_folder_with_schema(
@@ -589,6 +594,7 @@ class VirtualFolder(DAVCollection):
         Raises:
             Exception: If creation fails or is not supported.
         """
+        logger.debug(f"create_collection called for {self.path}")
         session_id = self.environ.get("filehold.session_id")
         base_url = self.environ.get("filehold.url", "http://localhost/FH/FileHold/")
 
@@ -623,6 +629,7 @@ class VirtualFolder(DAVCollection):
         Raises:
             Exception: If the current level allows file creation or if operation fails.
         """
+        logger.debug(f"create_empty_resource called for {self.path}")
         if self.level != self.LEVEL_FOLDER:
             raise Exception("Files can only be added to Folders")
 
@@ -656,6 +663,7 @@ class VirtualFolder(DAVCollection):
         Raises:
             Exception: If the move is invalid or fails.
         """
+        logger.debug(f"handle_move called for {self.path} to {dest_path}")
         new_name = os.path.basename(dest_path.rstrip("/"))
         logger.info(
             f"handle_move called for {self.path}. Dest path: {dest_path}, New name: {new_name}"
@@ -798,6 +806,7 @@ class VirtualFolder(DAVCollection):
         Returns:
             True always.
         """
+        logger.debug(f"support_recursive_move called for {self.path}")
         return True
 
     def is_readonly(self) -> bool:
@@ -807,6 +816,7 @@ class VirtualFolder(DAVCollection):
         Returns:
             False always.
         """
+        logger.debug(f"is_readonly called for {self.path}")
         return False
 
     def support_etag(self) -> bool:
@@ -816,4 +826,5 @@ class VirtualFolder(DAVCollection):
         Returns:
             False always.
         """
+        logger.debug(f"support_etag called for {self.path}")
         return False
