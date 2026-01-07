@@ -223,7 +223,8 @@ class VirtualFile(DAVNonCollection):
             A list of property names.
         """
         prop_names = super().get_property_names(is_allprop=is_allprop)
-        prop_names.append("{DAV:}owner")
+        if "{DAV:}owner" not in prop_names:
+            prop_names.append("{DAV:}owner")
         return prop_names
 
     def get_etag(self) -> None:

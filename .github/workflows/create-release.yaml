@@ -15,20 +15,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.14"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      
+      - name: Set up Python 
+        run: uv python install 3.14
 
       - name: Update Version
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           echo "Updating version to $VERSION"
-          sed -i "s/^__version__ = \".*\"/__version__ = \"$VERSION\"/" src/webdav_server_for_filehold/__init__.py
-          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+          uv version "$VERSION"
 
-      - name: Install uv
-        run: pip install uv
+      - name: Install the project
+        run: uv sync --all-extras --dev
 
       - name: Run Tests
         run: |
