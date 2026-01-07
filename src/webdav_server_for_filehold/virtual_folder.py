@@ -797,6 +797,16 @@ class VirtualFolder(DAVCollection):
         else:
             raise Exception(f"Renaming not supported for level {self.level}")
 
+    def support_recursive_delete(self) -> bool:
+        """
+        Returns whether the provider supports recursive delete.
+
+        Returns:
+            True always.
+        """
+        logger.debug(f"support_recursive_delete called for {self.path}")
+        return True
+
     def support_recursive_move(self, dest_path: str) -> bool:
         """
         Returns whether the provider supports recursive move.

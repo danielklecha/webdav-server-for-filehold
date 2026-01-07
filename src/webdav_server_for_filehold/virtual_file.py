@@ -337,6 +337,16 @@ class VirtualFile(DAVNonCollection):
             session_id, base_url, self.dto_object, snapshot_id=self.snapshot_id
         )
 
+    def support_recursive_delete(self) -> bool:
+        """
+        Check if recursive delete is supported.
+
+        Returns:
+            True always.
+        """
+        logger.debug(f"support_recursive_delete called for {self.path}")
+        return True
+
     def handle_move(self, dest_path: str) -> bool:
         """
         Handle a move or rename operation.
