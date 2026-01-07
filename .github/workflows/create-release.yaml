@@ -31,8 +31,7 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run Tests
-        run: |
-          uv run pytest tests/unit
+        run: uv run pytest tests/unit
 
       - name: Build
         run: uv build
@@ -40,5 +39,4 @@ jobs:
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${{ github.ref_name }}" dist/* --generate-notes
+        run: gh release create "${{ github.ref_name }}" dist/* --generate-notes
