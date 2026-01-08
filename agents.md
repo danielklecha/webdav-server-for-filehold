@@ -8,7 +8,7 @@ The application is built on top of **WsgiDAV**, a WSGI-based WebDAV server for P
 
 1.  **Entry Point (`main.py`)**:
     -   Configures the WsgiDAV server.
-    -   Sets up the WSGI application (using `cheroot` for production).
+    -   Sets up the WSGI application (using `uvicorn` for production).
     -   Handles command-line arguments.
 
 2.  **WebDAV Provider (`provider.py`)**:
@@ -34,7 +34,7 @@ The application is built on top of **WsgiDAV**, a WSGI-based WebDAV server for P
 
 ## Dependencies
 -   **wsgidav**: The WebDAV server framework.
--   **cheroot**: Production-quality WSGI server.
+-   **uvicorn**: Production-quality ASGI/WSGI server.
 -   **zeep**: SOAP client for communicating with FileHold wsdl.
 -   **requests**: HTTP library (used by zeep).
 
@@ -58,5 +58,5 @@ Tests are located in `tests/`.
 ### Key Considerations for Agents
 -   **SOAP API**: The FileHold API is SOAP-based. All interactions go through `zeep` clients initialized in `ClientFactory`.
 -   **State Management**: WebDAV is stateless, but FileHold sessions are stateful. The `auth.py` handles session caching.
--   **Concurrency**: usage of `cheroot` implies multi-threaded execution. Ensure shared resources are thread-safe.
+-   **Concurrency**: usage of `uvicorn` implies multi-threaded execution. Ensure shared resources are thread-safe.
 -   **FileHold Schema**: The mapping between FileHold "Documents" (which have metadata/cards) and WebDAV "Files" (which are binary streams) is critical. `DocumentService` and `DocumentDataService` handle this abstraction.
