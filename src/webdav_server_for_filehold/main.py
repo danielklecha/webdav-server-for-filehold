@@ -1,6 +1,8 @@
 import argparse
 import logging
 import typing
+import json
+import os
 
 from cheroot import wsgi
 from wsgidav.wsgidav_app import WsgiDAVApp
@@ -8,6 +10,53 @@ from wsgidav.wsgidav_app import WsgiDAVApp
 # Import from local modules
 from .auth import CustomDomainController
 from .provider import CustomProvider
+
+_application = None
+
+
+def _parse_environ(environ: dict) -> dict:
+    """
+    Parses configuration from environment variables.
+
+    Args:
+        environ (dict): The environment dictionary (e.g., os.environ or WSGI environ).
+
+    Returns:
+        dict: A dictionary of configuration arguments for _get_wsgi_app.
+    """
+    kwargs = {}
+
+    filehold_url = environ.get("WEBDAV_FILEHOLD_URL")
+    if filehold_url:
+        kwargs["filehold_url"] = filehold_url
+
+    host = environ.get("WEBDAV_HOST")
+    if host:
+        kwargs["host"] = host
+
+    port = environ.get("WEBDAV_PORT")
+    if port:
+        try:
+            kwargs["port"] = int(port)
+        except ValueError:
+            logging.error(f"Invalid value for WEBDAV_PORT: {port}")
+
+    verbose = environ.get("WEBDAV_VERBOSE")
+    if verbose:
+        try:
+            kwargs["verbose"] = int(verbose)
+        except ValueError:
+            logging.error(f"Invalid value for WEBDAV_VERBOSE: {verbose}")
+
+    create_category = environ.get("WEBDAV_CREATE_CATEGORY_IN_DRAWER")
+    if create_category:
+        kwargs["create_category_in_drawer"] = create_category.lower() == "true"
+
+    default_schema = environ.get("WEBDAV_DEFAULT_SCHEMA_NAME")
+    if default_schema:
+        kwargs["default_schema_name"] = default_schema
+
+    return kwargs
 
 
 def _parse_arguments() -> argparse.Namespace:
@@ -102,29 +151,38 @@ def _configure_logging(verbose: bool, very_verbose: bool) -> None:
     # Explicitly silence some noisy libraries if we are NOT in very_verbose mode?
     # No, INFO is standard. If they adhere to INFO, it's fine.
 
-
-
-def _create_app_config(args: argparse.Namespace) -> typing.Dict[str, typing.Any]:
+def _get_wsgi_app(
+    filehold_url: str = "http://localhost/FH/FileHold/",
+    host: str = "0.0.0.0",
+    port: int = 8080,
+    verbose: int = 2,
+    create_category_in_drawer: bool = False,
+    default_schema_name: typing.Optional[str] = None
+) -> WsgiDAVApp:
     """
-    Creates the WsgiDAV app configuration dictionary.
+    Creates the WsgiDAV application.
 
     Args:
-        args (argparse.Namespace): The parsed command-line arguments.
+        filehold_url (str): Base URL for FileHold.
+        host (str): Host to bind to.
+        port (int): Port to bind to.
+        verbose (int): Verbosity level (0-3).
+        create_category_in_drawer (bool): Create Category instead of Folder in Drawer.
+        default_schema_name (typing.Optional[str]): Default schema name.
 
     Returns:
-        typing.Dict[str, typing.Any]: The WsgiDAV configuration dictionary.
+        WsgiDAVApp: The WsgiDAV application.
     """
     # Ensure URL ends with slash
-    filehold_url: str = args.filehold_url
     if not filehold_url.endswith("/"):
         filehold_url += "/"
 
-    return {
+    config = {
         "provider_mapping": {
             "/": CustomProvider(
                 filehold_url,
-                args.create_category_in_drawer,
-                args.default_schema_name
+                create_category_in_drawer,
+                default_schema_name
             )
         },
         "http_authenticator": {
@@ -133,26 +191,59 @@ def _create_app_config(args: argparse.Namespace) -> typing.Dict[str, typing.Any]
             "accept_digest": False,
             "default_to_digest": False,
         },
-        "verbose": 3 if args.very_verbose else 2,
-        "host": args.host,
-        "port": args.port,
-        "filehold_url": filehold_url  # Pass to DC via config
+        "verbose": verbose,
+        "host": host,
+        "port": port,
+        "filehold_url": filehold_url
     }
+    return WsgiDAVApp(config)
 
 
-def _start_server(config: typing.Dict[str, typing.Any], ssl_cert: typing.Optional[str], ssl_key: typing.Optional[str]) -> None:
+def get_wsgi_app(environ, start_response):
+    """
+    WSGI application entry point for IIS/FastCGI.
+    
+    Configuration is loaded from environment variables (e.g. WEBDAV_FILEHOLD_URL).
+    """
+    global _application
+    if _application is None:
+        # Check both process environment (os.environ) and WSGI environment (environ)
+        # WSGI environ takes precedence for request-specific config if needed, 
+        # but here we're initializing the global app so we check likely sources.
+        # We start with os.environ as a base, then update with passed environ if it has our keys.
+        
+        # Merge sources: os.environ first, then passed environ
+        merged_environ = os.environ.copy()
+        # Only update with string keys from environ to avoid issues
+        for k, v in environ.items():
+            if isinstance(k, str) and isinstance(v, str):
+                merged_environ[k] = v
+
+        kwargs = _parse_environ(merged_environ)
+        _application = _get_wsgi_app(**kwargs)
+
+    return _application(environ, start_response)
+
+
+def start_server(
+    app: typing.Any,
+    host: str,
+    port: int,
+    ssl_cert: typing.Optional[str] = None,
+    ssl_key: typing.Optional[str] = None
+) -> None:
     """
     Initializes and starts the WSGI server.
 
     Args:
-        config (typing.Dict[str, typing.Any]): The WsgiDAV configuration.
+        app (typing.Any): The WSGI application (e.g. WsgiDAVApp).
+        host (str): Host to bind to.
+        port (int): Port to bind to.
         ssl_cert (typing.Optional[str]): Path to SSL certificate.
         ssl_key (typing.Optional[str]): Path to SSL key.
     """
-    app = WsgiDAVApp(config)
-
     server = wsgi.Server(
-        bind_addr=(config["host"], config["port"]),
+        bind_addr=(host, port),
         wsgi_app=app,
     )
 
@@ -163,8 +254,10 @@ def _start_server(config: typing.Dict[str, typing.Any], ssl_cert: typing.Optiona
         protocol = "https"
 
     try:
-        logging.info(f"Serving on {protocol}://{config['host']}:{config['port']} ...")
-        logging.info(f"Targeting FileHold at {config['filehold_url']}")
+        logging.info(f"Serving on {protocol}://{host}:{port} ...")
+        # Ensure we don't fail if app doesn't have config (generic usage)
+        if hasattr(app, "config"):
+             logging.info(f"Targeting FileHold at {app.config.get('provider_mapping', {}).get('/', 'UNKNOWN')}")
         server.start()
     except KeyboardInterrupt:
         logging.info("Stopping...")
@@ -178,8 +271,18 @@ def run() -> None:
     """
     args = _parse_arguments()
     _configure_logging(args.verbose, args.very_verbose)
-    config = _create_app_config(args)
-    _start_server(config, args.ssl_cert, args.ssl_key)
+    
+    verbose_level = 3 if args.very_verbose else 2
+    
+    app = _get_wsgi_app(
+        filehold_url=args.filehold_url,
+        host=args.host,
+        port=args.port,
+        verbose=verbose_level,
+        create_category_in_drawer=args.create_category_in_drawer,
+        default_schema_name=args.default_schema_name
+    )
+    start_server(app, args.host, args.port, args.ssl_cert, args.ssl_key)
 
 
 if __name__ == "__main__":
