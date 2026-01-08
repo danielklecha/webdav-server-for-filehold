@@ -1,10 +1,13 @@
 import argparse
 import logging
+import logging.config
 import typing
 import json
 import os
 
-from cheroot import wsgi
+import sys
+import uvicorn
+from uvicorn.logging import DefaultFormatter
 from wsgidav.wsgidav_app import WsgiDAVApp
 
 # Import from local modules
@@ -117,39 +120,58 @@ def _parse_arguments() -> argparse.Namespace:
 
 def _configure_logging(verbose: bool, very_verbose: bool) -> None:
     """
-    Configures logging based on verbosity flags.
+    Configures logging based on verbosity flags using standard dictConfig.
     
     Rules:
-    - Default: INFO for all.
-    - verbose (-v): DEBUG for App, INFO for others.
-    - very_verbose (-vv): DEBUG for all.
+    - Default: WARNING for everything.
+    - verbose (-v): INFO for webdav_server_for_filehold, WARNING for others.
+    - very_verbose (-vv): INFO for everything.
     """
-    root_level = logging.INFO
-    app_level = logging.INFO
+    root_level = "WARNING"
+    app_level = "NOTSET"
 
     if very_verbose:
-        root_level = logging.DEBUG
-        app_level = logging.DEBUG
+        root_level = "INFO"
     elif verbose:
-        root_level = logging.INFO
-        app_level = logging.DEBUG
+        app_level = "INFO"
 
-    # Configure root logger
-    logging.basicConfig(
-        level=root_level,
-        format='%(asctime)s.%(msecs)03d - %(levelname)-8s: %(message)s',
-        datefmt='%H:%M:%S'
-    )
-
-    # Configure App logger specifically to ensure it gets DEBUG if requested
-    # We assume the package name is what's used for loggers
-    logging.getLogger("webdav_server_for_filehold").setLevel(app_level)
+    logging_config = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "default": {
+                "()": "uvicorn.logging.DefaultFormatter",
+                "fmt": "%(levelprefix)s %(message)s",
+                "use_colors": None,
+            },
+        },
+        "handlers": {
+            "console": {
+                "formatter": "default",
+                "class": "logging.StreamHandler",
+                "stream": "ext://sys.stderr",
+            },
+        },
+        "loggers": {
+            "webdav_server_for_filehold": {
+                "level": app_level,
+            },
+            "wsgidav": {
+                "level": "NOTSET",
+                "propagate": True,
+            },
+            "uvicorn": {
+                "level": "NOTSET",
+                "propagate": True,
+            },
+        },
+        "root": {
+            "level": root_level,
+            "handlers": ["console"],
+        },
+    }
     
-    # If using -v (not -vv), ensure WsgiDAV and others don't leak into DEBUG if they rely on root
-    # (basicConfig sets root level, which they inherit. If root is INFO, they match INFO).
-    
-    # Explicitly silence some noisy libraries if we are NOT in very_verbose mode?
-    # No, INFO is standard. If they adhere to INFO, it's fine.
+    logging.config.dictConfig(logging_config)
 
 def _get_wsgi_app(
     filehold_url: str = "http://localhost/FH/FileHold/",
@@ -190,6 +212,9 @@ def _get_wsgi_app(
             "accept_basic": True,
             "accept_digest": False,
             "default_to_digest": False,
+        },
+        "logging": {
+            "enable": False,
         },
         "verbose": verbose,
         "host": host,
@@ -242,26 +267,25 @@ def start_server(
         ssl_cert (typing.Optional[str]): Path to SSL certificate.
         ssl_key (typing.Optional[str]): Path to SSL key.
     """
-    server = wsgi.Server(
-        bind_addr=(host, port),
-        wsgi_app=app,
-    )
-
     protocol = "http"
     if ssl_cert and ssl_key:
-        from cheroot.ssl.builtin import BuiltinSSLAdapter
-        server.ssl_adapter = BuiltinSSLAdapter(ssl_cert, ssl_key)
         protocol = "https"
 
-    try:
-        logging.info(f"Serving on {protocol}://{host}:{port} ...")
-        # Ensure we don't fail if app doesn't have config (generic usage)
-        if hasattr(app, "config"):
-             logging.info(f"Targeting FileHold at {app.config.get('provider_mapping', {}).get('/', 'UNKNOWN')}")
-        server.start()
-    except KeyboardInterrupt:
-        logging.info("Stopping...")
-        server.stop()
+    logger = logging.getLogger("webdav_server_for_filehold")
+    logger.info(f"Serving on {protocol}://{host}:{port} ...")
+    # Ensure we don't fail if app doesn't have config (generic usage)
+    if hasattr(app, "config"):
+        logger.info(f"Targeting FileHold at {app.config.get('provider_mapping', {}).get('/', 'UNKNOWN')}")
+
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        ssl_certfile=ssl_cert,
+        ssl_keyfile=ssl_key,
+        interface="wsgi",
+        log_config=None,
+    )
 
 
 def run() -> None:

@@ -27,7 +27,7 @@ classifiers = [
 urls = { Repository = "https://github.com/danielklecha/webdav-server-for-filehold" }
 dependencies = [
     "wsgidav",
-    "cheroot",
+    "uvicorn",
     "zeep",
     "requests",
 ]
