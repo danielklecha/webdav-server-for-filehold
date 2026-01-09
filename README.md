@@ -19,28 +19,34 @@ This server allows you to access your FileHold documents via the WebDAV protocol
 5. **Structure Modification:** Create cabinets, drawers, folder groups, and folders.
 6. **Renaming:** Rename cabinets, drawers, folder groups, folders and documents.
 
+
+## Installation
+
+To install the application, you need the provided `.whl` file.
+
+* **pip**: `python -m pip install webdav_server_for_filehold-*.whl`
+* **uv**: `uv pip install webdav_server_for_filehold-*.whl`
+
 ## Configuration
 
 You can configure the server using the following command-line arguments:
 
-- `--host`: The interface to bind to (default: `0.0.0.0`).
-- `--port`: The port to listen on (default: `8080`).
-- `--filehold-url`: The base URL for the FileHold instance (default: `http://localhost/FH/FileHold/`).
-- `--default_schema_name`: Default schema name to use when creating new documents (e.g. `Document`).
-- `--create-category-in-drawer`: If set, creating a directory in a Drawer creates a Category instead of a Folder.
-- `--verbose`: Logging verbosity level (0=ERROR, 1=WARNING, 2=INFO, 3=DEBUG).
-- `--ssl-cert`: Path to SSL certificate file (PEM format).
-- `--ssl-key`: Path to SSL key file (PEM format).
+| Argument                      | Description                                                         | Default                         |
+| :---------------------------- | :------------------------------------------------------------------ | :------------------------------ |
+| `--host`                      | Host to bind to                                                     | `0.0.0.0`                       |
+| `--port`                      | Port to bind to                                                     | `8080`                          |
+| `--filehold-url`              | Base URL for FileHold                                               | `http://localhost/FH/FileHold/` |
+| `--default_schema_name`       | Default schema name to use when creating Cabinets or Folders        | `None`                          |
+| `--create-category-in-drawer` | Create Category instead of Folder when creating directory in Drawer | `False`                         |
+| `-v`, `--verbose`             | Enable debug logging for the application                            | `False`                         |
+| `-vv`, `--very-verbose`       | Enable debug logging for everything (including libraries)           | `False`                         |
+| `--ssl-cert`                  | Path to SSL certificate file (PEM format)                           | `None`                          |
+| `--ssl-key`                   | Path to SSL key file (PEM format)                                   | `None`                          |
 
 **Example:**
 ```bash
 webdav-server-for-filehold --port 9090 --filehold-url http://filehold.example.com/FH/FileHold/ --default_schema_name "Document"
 ```
-
-## Deployment
-
-1. `pip install webdav_server_for_filehold-*.whl`: Install the package.
-2. `webdav-server-for-filehold --help`: Run the application.
 
 ## Contributing
 
