@@ -59,6 +59,10 @@ def _parse_environ(environ: dict) -> dict:
     if default_schema:
         kwargs["default_schema_name"] = default_schema
 
+    mount_path = environ.get("WEBDAV_MOUNT_PATH")
+    if mount_path:
+        kwargs["mount_path"] = mount_path
+
     return kwargs
 
 
@@ -179,7 +183,8 @@ def _get_wsgi_app(
     port: int = 8080,
     verbose: int = 2,
     create_category_in_drawer: bool = False,
-    default_schema_name: typing.Optional[str] = None
+    default_schema_name: typing.Optional[str] = None,
+    mount_path: typing.Optional[str] = None
 ) -> WsgiDAVApp:
     """
     Creates the WsgiDAV application.
@@ -219,7 +224,8 @@ def _get_wsgi_app(
         "verbose": verbose,
         "host": host,
         "port": port,
-        "filehold_url": filehold_url
+        "filehold_url": filehold_url,
+        "mount_path": mount_path
     }
     return WsgiDAVApp(config)
 
@@ -247,6 +253,31 @@ def get_wsgi_app(environ, start_response):
         kwargs = _parse_environ(merged_environ)
         _application = _get_wsgi_app(**kwargs)
 
+    script_name_override = os.environ.get("SCRIPT_NAME")
+    if script_name_override:
+         script_name = script_name_override.rstrip("/")
+         environ["SCRIPT_NAME"] = script_name
+         
+         path_info = environ.get("PATH_INFO", "")
+         
+         # 1. Strip script_name from PATH_INFO if present (handling proxy/uvicorn overlap)
+         if path_info.startswith(script_name):
+             new_path_info = path_info[len(script_name):]
+             environ["PATH_INFO"] = new_path_info
+             
+             # 2. Redirect /webdav -> /webdav/ to ensure relative links work in WsgiDAV
+             if new_path_info == "" and not path_info.endswith("/"):
+                 target_url = script_name + "/"
+                 qs = environ.get("QUERY_STRING")
+                 if qs:
+                     target_url += "?" + qs
+                 
+                 start_response("301 Moved Permanently", [
+                     ("Location", target_url),
+                     ("Content-Length", "0")
+                 ])
+                 return [b""]
+    
     return _application(environ, start_response)
 
 
