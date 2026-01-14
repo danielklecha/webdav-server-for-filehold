@@ -17,109 +17,92 @@ from .provider import CustomProvider
 _application = None
 
 
-def _parse_environ(environ: dict) -> dict:
+def _str_to_bool(value: typing.Union[str, bool, int, None]) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).lower() in ("true", "1", "yes", "on")
+
+
+def _parse_arguments(
+    args: typing.Optional[typing.List[str]] = None,
+    environ: typing.Dict[str, str] = os.environ
+) -> argparse.Namespace:
     """
-    Parses configuration from environment variables.
+    Parses command-line arguments, using environment variables as defaults.
 
     Args:
-        environ (dict): The environment dictionary (e.g., os.environ or WSGI environ).
-
-    Returns:
-        dict: A dictionary of configuration arguments for _get_wsgi_app.
-    """
-    kwargs = {}
-
-    filehold_url = environ.get("WEBDAV_FILEHOLD_URL")
-    if filehold_url:
-        kwargs["filehold_url"] = filehold_url
-
-    host = environ.get("WEBDAV_HOST")
-    if host:
-        kwargs["host"] = host
-
-    port = environ.get("WEBDAV_PORT")
-    if port:
-        try:
-            kwargs["port"] = int(port)
-        except ValueError:
-            logging.error(f"Invalid value for WEBDAV_PORT: {port}")
-
-    verbose = environ.get("WEBDAV_VERBOSE")
-    if verbose:
-        try:
-            kwargs["verbose"] = int(verbose)
-        except ValueError:
-            logging.error(f"Invalid value for WEBDAV_VERBOSE: {verbose}")
-
-    create_category = environ.get("WEBDAV_CREATE_CATEGORY_IN_DRAWER")
-    if create_category:
-        kwargs["create_category_in_drawer"] = create_category.lower() == "true"
-
-    default_schema = environ.get("WEBDAV_DEFAULT_SCHEMA_NAME")
-    if default_schema:
-        kwargs["default_schema_name"] = default_schema
-
-    mount_path = environ.get("WEBDAV_MOUNT_PATH")
-    if mount_path:
-        kwargs["mount_path"] = mount_path
-
-    return kwargs
-
-
-def _parse_arguments() -> argparse.Namespace:
-    """
-    Parses command-line arguments.
+        args (list): Optional argument list to parse (overrides sys.argv).
+        environ (dict): Environment dictionary to look up defaults (default: os.environ).
 
     Returns:
         argparse.Namespace: The parsed command-line arguments.
     """
     parser = argparse.ArgumentParser(description="WebDAV for FileHold")
+
+    # Helper to get env var with default
+    def env(key, default=None):
+        return environ.get(key, default)
+
     parser.add_argument(
         "--host",
-        default="0.0.0.0",
+        default=env("WEBDAV_HOST", "0.0.0.0"),
         help="Host to bind to (default: 0.0.0.0)"
     )
     parser.add_argument(
         "--port",
         type=int,
-        default=8080,
+        default=int(env("WEBDAV_PORT", 8080)),
         help="Port to bind to (default: 8080)"
     )
     parser.add_argument(
         "-v", "--verbose",
         action="store_true",
+        default=_str_to_bool(env("WEBDAV_VERBOSE", False)),
         help="Enable debug logging for the application"
     )
     parser.add_argument(
-        "-vv", "--very-verbose",
+        "-vv", "--veryverbose",
         action="store_true",
+        default=_str_to_bool(env("WEBDAV_VERYVERBOSE", False)),
         help="Enable debug logging for everything (including libraries)"
     )
 
     parser.add_argument(
         "--filehold-url",
-        default="http://localhost/FH/FileHold/",
+        default=env("WEBDAV_FILEHOLD_URL", "http://localhost/FH/FileHold/"),
         help="Base URL for FileHold (default: http://localhost/FH/FileHold/)"
     )
     parser.add_argument(
         "--ssl-cert",
+        default=env("WEBDAV_SSL_CERT"),
         help="Path to SSL certificate file (PEM format)"
     )
     parser.add_argument(
         "--ssl-key",
+        default=env("WEBDAV_SSL_KEY"),
         help="Path to SSL key file (PEM format)"
     )
     parser.add_argument(
         "--create-category-in-drawer",
         action="store_true",
-        default=False,
+        default=_str_to_bool(env("WEBDAV_CREATE_CATEGORY_IN_DRAWER", False)),
         help="Create Category instead of Folder when creating directory in Drawer"
     )
     parser.add_argument(
         "--default_schema_name",
+        default=env("WEBDAV_DEFAULT_SCHEMA_NAME"),
         help="Default schema name to use when creating Cabinets or Folders"
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--mount-path",
+        default=env("WEBDAV_MOUNT_PATH"),
+        help="Mount path for WebDAV (e.g. /webdav)"
+    )
+
+    # If args is None, argparse uses sys.argv
+    return parser.parse_args(args)
 
 
 def _configure_logging(verbose: bool, very_verbose: bool) -> None:
@@ -250,8 +233,23 @@ def get_wsgi_app(environ, start_response):
             if isinstance(k, str) and isinstance(v, str):
                 merged_environ[k] = v
 
-        kwargs = _parse_environ(merged_environ)
-        _application = _get_wsgi_app(**kwargs)
+        # Parse configuration from environment using argument defaults
+        # We pass args=[] to ignore sys.argv when running under WSGI
+        args = _parse_arguments(args=[], environ=merged_environ)
+        
+        _configure_logging(args.verbose, args.very_verbose)
+        
+        verbose_level = 3 if args.very_verbose else 2
+
+        _application = _get_wsgi_app(
+            filehold_url=args.filehold_url,
+            host=args.host,
+            port=args.port,
+            verbose=verbose_level,
+            create_category_in_drawer=args.create_category_in_drawer,
+            default_schema_name=args.default_schema_name,
+            mount_path=args.mount_path
+        )
 
     script_name_override = os.environ.get("SCRIPT_NAME")
     if script_name_override:
@@ -335,7 +333,8 @@ def run() -> None:
         port=args.port,
         verbose=verbose_level,
         create_category_in_drawer=args.create_category_in_drawer,
-        default_schema_name=args.default_schema_name
+        default_schema_name=args.default_schema_name,
+        mount_path=args.mount_path
     )
     start_server(app, args.host, args.port, args.ssl_cert, args.ssl_key)
 

@@ -31,17 +31,17 @@ To install the application, you need the provided `.whl` file.
 
 You can configure the server using the following command-line arguments:
 
-| Argument                      | Description                                                         | Default                         |
-| :---------------------------- | :------------------------------------------------------------------ | :------------------------------ |
-| `--host`                      | Host to bind to                                                     | `0.0.0.0`                       |
-| `--port`                      | Port to bind to                                                     | `8080`                          |
-| `--filehold-url`              | Base URL for FileHold                                               | `http://localhost/FH/FileHold/` |
-| `--default_schema_name`       | Default schema name to use when creating Cabinets or Folders        | `None`                          |
-| `--create-category-in-drawer` | Create Category instead of Folder when creating directory in Drawer | `False`                         |
-| `-v`, `--verbose`             | Enable debug logging for the application                            | `False`                         |
-| `-vv`, `--very-verbose`       | Enable debug logging for everything (including libraries)           | `False`                         |
-| `--ssl-cert`                  | Path to SSL certificate file (PEM format)                           | `None`                          |
-| `--ssl-key`                   | Path to SSL key file (PEM format)                                   | `None`                          |
+| Argument                      | Environment Variable               | Description                                                         | Default                         |
+| :---------------------------- | :--------------------------------- | :------------------------------------------------------------------ | :------------------------------ |
+| `--host`                      | `WEBDAV_HOST`                      | Host to bind to                                                     | `0.0.0.0`                       |
+| `--port`                      | `WEBDAV_PORT`                      | Port to bind to                                                     | `8080`                          |
+| `--filehold-url`              | `WEBDAV_FILEHOLD_URL`              | Base URL for FileHold                                               | `http://localhost/FH/FileHold/` |
+| `--default_schema_name`       | `WEBDAV_DEFAULT_SCHEMA_NAME`       | Default schema name to use when creating Cabinets or Folders        | `None`                          |
+| `--create-category-in-drawer` | `WEBDAV_CREATE_CATEGORY_IN_DRAWER` | Create Category instead of Folder when creating directory in Drawer | `False`                         |
+| `-v`, `--verbose`             | `WEBDAV_VERBOSE`                   | Enable debug logging for the application                            | `False`                         |
+| `-vv`, `--veryverbose`        | `WEBDAV_VERYVERBOSE`               | Enable debug logging for everything (including libraries)           | `False`                         |
+| `--ssl-cert`                  | `WEBDAV_SSL_CERT`                  | Path to SSL certificate file (PEM format)                           | `None`                          |
+| `--ssl-key`                   | `WEBDAV_SSL_KEY`                   | Path to SSL key file (PEM format)                                   | `None`                          |
 
 **Example:**
 ```bash
