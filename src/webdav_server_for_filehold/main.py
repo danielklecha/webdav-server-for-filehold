@@ -63,9 +63,9 @@ def _parse_arguments(
         help="Enable debug logging for the application"
     )
     parser.add_argument(
-        "-vv", "--veryverbose",
+        "-vv", "--very-verbose",
         action="store_true",
-        default=_str_to_bool(env("WEBDAV_VERYVERBOSE", False)),
+        default=_str_to_bool(env("WEBDAV_VERY_VERBOSE", False)),
         help="Enable debug logging for everything (including libraries)"
     )
 
@@ -159,6 +159,20 @@ def _configure_logging(verbose: bool, very_verbose: bool) -> None:
     }
     
     logging.config.dictConfig(logging_config)
+    
+    # Suppress specific WsgiDAV warning about lack of SSL
+    # This is intended behavior when running behind an SSL-terminating proxy (like IIS)
+    # or in a controlled internal environment.
+    class WsgiDavSslFilter(logging.Filter):
+        def filter(self, record):
+            if "wsgidav" in record.name:
+                if "Basic authentication is enabled: It is highly recommended to enable SSL" in record.getMessage():
+                    return False
+            return True
+
+    # Attach to root handlers so it applies to wsgidav propagated logs
+    for handler in logging.getLogger().handlers:
+        handler.addFilter(WsgiDavSslFilter())
 
 def _get_wsgi_app(
     filehold_url: str = "http://localhost/FH/FileHold/",
@@ -203,6 +217,10 @@ def _get_wsgi_app(
         },
         "logging": {
             "enable": False,
+        },
+        "cors": {
+            "enable": True,
+            "allow_origin": "*",
         },
         "verbose": verbose,
         "host": host,
@@ -302,9 +320,6 @@ def start_server(
 
     logger = logging.getLogger("webdav_server_for_filehold")
     logger.info(f"Serving on {protocol}://{host}:{port} ...")
-    # Ensure we don't fail if app doesn't have config (generic usage)
-    if hasattr(app, "config"):
-        logger.info(f"Targeting FileHold at {app.config.get('provider_mapping', {}).get('/', 'UNKNOWN')}")
 
     uvicorn.run(
         app,
