@@ -27,6 +27,21 @@ To install the application, you need the provided `.whl` file.
 * **pip**: `python -m pip install webdav_server_for_filehold-*.whl`
 * **uv**: `uv pip install webdav_server_for_filehold-*.whl`
 
+## Quick start
+
+To start the server, run:
+
+```bash
+uv run webdav-server-for-filehold --filehold-url http://localhost/FH/FileHold/
+```
+
+### Logging in
+
+When connecting via a WebDAV client (like WinSCP), use your FileHold credentials:
+
+- **Local User**: `sysadm`, `.\sysadm`, or `local\sysadm`
+- **Domain User**: `domainName\sysadm`
+
 ## Configuration
 
 You can configure the server using the following command-line arguments:
@@ -39,7 +54,7 @@ You can configure the server using the following command-line arguments:
 | `--default_schema_name`       | `WEBDAV_DEFAULT_SCHEMA_NAME`       | Default schema name to use when creating Cabinets or Folders        | `None`                          |
 | `--create-category-in-drawer` | `WEBDAV_CREATE_CATEGORY_IN_DRAWER` | Create Category instead of Folder when creating directory in Drawer | `False`                         |
 | `-v`, `--verbose`             | `WEBDAV_VERBOSE`                   | Enable debug logging for the application                            | `False`                         |
-| `-vv`, `--veryverbose`        | `WEBDAV_VERYVERBOSE`               | Enable debug logging for everything (including libraries)           | `False`                         |
+| `-vv`, `--very-verbose`       | `WEBDAV_VERY_VERBOSE`              | Enable debug logging for everything (including libraries)           | `False`                         |
 | `--ssl-cert`                  | `WEBDAV_SSL_CERT`                  | Path to SSL certificate file (PEM format)                           | `None`                          |
 | `--ssl-key`                   | `WEBDAV_SSL_KEY`                   | Path to SSL key file (PEM format)                                   | `None`                          |
 

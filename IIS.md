@@ -29,7 +29,30 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 - Set the application pool to `webdav AppPool`
 9.  Create a web.config file in the deployment directory
 
-## Configure web.config
+## Website configuration
+
+### Option 1 - subdomain
+
+1. In the Connections pane on the left, right-click Sites and select Add Website...
+2. In the Add Website dialog, enter the following:
+- Site name: `webdav.localhost`
+- Application pool: `webdav AppPool`
+- Physical path: `C:\inetpub\wwwroot\webdav`
+- Type: `http`
+- IP Address: `All Unassigned`
+- Port: `80`
+- Host name: `webdav.localhost`
+
+### Option 2 - subdirectory
+
+1. In the Connections pane on the left, expand `Sites`, right-click `Default Web Site` and select Add Application...
+2. In the Add Application dialog, enter the following:
+- Alias: `webdav`
+- Application pool: `webdav AppPool`
+- Physical path: `C:\inetpub\wwwroot\webdav`
+
+## web.config configuration
+
 
 ### ASP.NET Core Module (ANCMV2) - recommended
 
@@ -48,8 +71,6 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
         <environmentVariable name="PYTHONPATH" value=".\" />
         <environmentVariable name="WEBDAV_FILEHOLD_URL" value="http://localhost/FH/FileHold/" />
         <environmentVariable name="WEBDAV_DEFAULT_SCHEMA_NAME" value="ed" />
-        <environmentVariable name="WEBDAV_MOUNT_PATH" value="/webdav" />
-        <environmentVariable name="SCRIPT_NAME" value="/webdav" />
       </environmentVariables>    
     </aspNetCore>
   </system.webServer>
@@ -73,8 +94,6 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
         <environmentVariable name="PYTHONPATH" value=".\" />
         <environmentVariable name="WEBDAV_FILEHOLD_URL" value="http://localhost/FH/FileHold/" />
         <environmentVariable name="WEBDAV_DEFAULT_SCHEMA_NAME" value="ed" />
-        <environmentVariable name="WEBDAV_MOUNT_PATH" value="/webdav" />
-        <environmentVariable name="SCRIPT_NAME" value="/webdav" />
       </environmentVariables>    
     </aspNetCore>
   </system.webServer>
@@ -98,15 +117,22 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
         <environmentVariable name="PYTHONPATH" value=".\" />
         <environmentVariable name="WEBDAV_FILEHOLD_URL" value="http://localhost/FH/FileHold/" />
         <environmentVariable name="WEBDAV_DEFAULT_SCHEMA_NAME" value="ed" />
-        <environmentVariable name="WEBDAV_MOUNT_PATH" value="/webdav" />
-        <environmentVariable name="SCRIPT_NAME" value="/webdav" />
       </environmentVariables>
     </httpPlatform>
   </system.webServer>
 </configuration>
 ```
 
-### Permissions
+## web.config post-configuration
+
+If you selected **Option 2 (subdirectory)**, add the following to the `web.config` file inside the `<environmentVariables>` section:
+
+```xml
+<environmentVariable name="WEBDAV_MOUNT_PATH" value="/webdav" />
+<environmentVariable name="SCRIPT_NAME" value="/webdav" />
+```
+
+## Permissions
 
 1.  Set permissions for deployment directory
 ```powershell
