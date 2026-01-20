@@ -24,8 +24,8 @@ This server allows you to access your FileHold documents via the WebDAV protocol
 
 To install the application, you need the provided `.whl` file.
 
+* **[uv](https://docs.astral.sh/uv/) (recommended)**: `uv pip install webdav_server_for_filehold-*.whl`
 * **pip**: `python -m pip install webdav_server_for_filehold-*.whl`
-* **uv**: `uv pip install webdav_server_for_filehold-*.whl`
 
 ## Quick start
 
