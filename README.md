@@ -67,3 +67,6 @@ webdav-server-for-filehold --port 9090 --filehold-url http://filehold.example.co
 
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for development and testing instructions.
 
+## License
+
+`webdav-server-for-filehold` is provided as-is under the MIT license.
