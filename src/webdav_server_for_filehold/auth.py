@@ -8,6 +8,7 @@ import threading
 from datetime import datetime, timedelta, timezone
 import logging
 from typing import Optional, List, Dict, Any, Tuple, Union
+from importlib.metadata import version, PackageNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +122,7 @@ class CustomDomainController(BaseDomainController):
         try:
             client = Client(self.wsdl_url)
             now = datetime.now(timezone.utc)
-            session_id, session_info_obj = self._resolve_session(client, user_name, password, now)
+            session_id, session_info_obj = self._resolve_session(client, user_name, password, now, environ)
 
             if session_id:
                 return self._configure_request_env(session_id, session_info_obj, environ, client)
@@ -243,7 +244,7 @@ class CustomDomainController(BaseDomainController):
                 'lifetime': now + timedelta(minutes=self.CACHE_LIFETIME_MINUTES)
             }
 
-    def _resolve_session(self, client: Client, user_name: str, password: str, now: datetime) -> Tuple[Optional[str], Any]:
+    def _resolve_session(self, client: Client, user_name: str, password: str, now: datetime, environ: Dict[str, Any]) -> Tuple[Optional[str], Any]:
         """Resolves the session ID, handling cache and refresh."""
         session_id = None
         should_refresh = False
@@ -260,6 +261,7 @@ class CustomDomainController(BaseDomainController):
         if not session_id:
             session_id = self._authenticate_with_credentials(client, user_name, password)
             if session_id:
+                self._check_compatibility(client, session_id, environ)
                 self._update_session_cache(user_name, password, session_id, now)
 
         return session_id, session_info_obj
@@ -278,3 +280,55 @@ class CustomDomainController(BaseDomainController):
             return False
 
         return True
+
+    def _check_compatibility(self, client: Client, session_id: str, environ: Dict[str, Any]) -> None:
+        """
+        Checks API compatibility and logs info.
+        """
+        try:
+            # Get version
+            try:
+                full_version = version("webdav-server-for-filehold")
+            except PackageNotFoundError:
+                full_version = "1.0.0"
+
+            # Major.Minor for clientVersion
+            major_minor = ".".join(full_version.split(".")[:2])
+
+            # IP Address
+            client_address = environ.get("REMOTE_ADDR", "")
+
+            server_version = ""
+
+            # CheckApiVersionAndLogClientInfo( string sessionId, string clientVersion, ref string serverVersion, string clientBuildNumber, string clientAddress )
+            result = client.service.CheckApiVersionAndLogClientInfo(
+                sessionId=session_id,
+                clientVersion=major_minor,
+                serverVersion=server_version,
+                clientBuildNumber=full_version,
+                clientAddress=client_address
+            )
+
+            # Handle result
+            status_code = result
+            server_version_out = "Unknown"
+
+            if isinstance(result, (list, tuple)):
+                if len(result) > 0:
+                    status_code = result[0]
+                if len(result) > 1:
+                    server_version_out = result[1]
+            elif hasattr(result, 'CheckApiVersionAndLogClientInfoResult'):
+                 status_code = result.CheckApiVersionAndLogClientInfoResult
+                 if hasattr(result, 'serverVersion'):
+                     server_version_out = result.serverVersion
+
+            if status_code == 0:
+                logger.debug(f"Client compatible. Server Version: {server_version_out}. Client Version: {full_version}")
+            elif status_code == 1:
+                logger.warning(f"Client partially compatible. Server Version: {server_version_out}. Client Version: {full_version}")
+            else:
+                logger.error(f"Client not compatible. Server Version: {server_version_out}. Client Version: {full_version}")
+
+        except Exception as e:
+            logger.error(f"Failed to check compatibility: {e}")
