@@ -5,6 +5,7 @@
 - `uv sync`: Create virtual environment and install dependencies.
 - `uv run webdav-server-for-filehold`: Run the server.
 - `uv build`: Build the package.
+- `uv sync --upgrade`: Upgrade dependencies.
 
 ## Testing
 
