@@ -1,5 +1,8 @@
 # WebDAV for FileHold (Community Tool)
 
+[![PyPI](https://img.shields.io/pypi/v/webdav-server-for-filehold)](https://pypi.org/project/webdav-server-for-filehold/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/danielklecha/webdav-server-for-filehold/blob/master/LICENSE.txt)
+
 ## Disclaimer
 
 **Community Tool - Unofficial Implementation**
@@ -31,7 +34,7 @@ This server allows you to access your FileHold documents via the WebDAV protocol
 To start the server, run:
 
 ```bash
-uv run webdav-server-for-filehold --filehold-url http://localhost/FH/FileHold/
+uvx webdav-server-for-filehold --filehold-url http://localhost/FH/FileHold/
 ```
 
 ### Logging in
