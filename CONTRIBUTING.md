@@ -1,5 +1,9 @@
 # Contributing
 
+## Disclaimer
+
+This is a community-developed, unofficial implementation and is **not** provided, supported, or endorsed by **FileHold Systems Inc.** or **Keymark**.
+
 ## Development
 
 - `uv sync`: Create virtual environment and install dependencies.

@@ -1,5 +1,9 @@
 # Security Policy
 
+## Disclaimer
+
+This is a community-developed, unofficial implementation and is **not** provided, supported, or endorsed by **FileHold Systems Inc.** or **Keymark**.
+
 ## Supported Versions
 
 To minimize the risk of vulnerabilities when using this project, we recommend that you use the latest available version.

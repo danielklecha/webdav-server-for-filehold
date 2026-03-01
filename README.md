@@ -1,9 +1,9 @@
-# WebDAV for FileHold
+# WebDAV for FileHold (Community Tool)
 
 ## Disclaimer
 
-**Unofficial Implementation**
-This project is an independent open-source software project. It is **not** affiliated with, endorsed by, sponsored by, or associated with **FileHold Systems Inc.**
+**Community Tool - Unofficial Implementation**
+This project is an independent, community-developed open-source software project. It is **not** provided, supported, endorsed by, sponsored by, or affiliated with **FileHold Systems Inc.** or **Keymark**.
 
 **Trademarks**
 "FileHold" and the FileHold logo are trademarks or registered trademarks of FileHold Systems Inc. in the United States, Canada, and/or other countries. All other trademarks cited herein are the property of their respective owners. Use of these names is for descriptive purposes only (nominative fair use) to indicate compatibility.
@@ -22,10 +22,9 @@ This server allows you to access your FileHold documents via the WebDAV protocol
 
 ## Installation
 
-To install the application, you need the provided `.whl` file.
-
-* **[uv](https://docs.astral.sh/uv/) (recommended)**: `uv pip install webdav_server_for_filehold-*.whl`
-* **pip**: `python -m pip install webdav_server_for_filehold-*.whl`
+* **Run directly with [uv](https://docs.astral.sh/uv/) (recommended)**: `uvx webdav-server-for-filehold`
+* **pip**: `pip install webdav-server-for-filehold`
+* **uv**: `uv pip install webdav-server-for-filehold`
 
 ## Quick start
 

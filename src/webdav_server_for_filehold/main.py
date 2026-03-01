@@ -39,7 +39,7 @@ def _parse_arguments(
     Returns:
         argparse.Namespace: The parsed command-line arguments.
     """
-    parser = argparse.ArgumentParser(description="WebDAV for FileHold")
+    parser = argparse.ArgumentParser(description="WebDAV for FileHold (Community Tool)")
 
     # Helper to get env var with default
     def env(key, default=None):
@@ -319,6 +319,7 @@ def start_server(
         protocol = "https"
 
     logger = logging.getLogger("webdav_server_for_filehold")
+    logger.info("WebDAV server for FileHold (Community Tool)")
     logger.info(f"Serving on {protocol}://{host}:{port} ...")
 
     uvicorn.run(
