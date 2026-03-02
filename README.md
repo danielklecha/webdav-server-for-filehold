@@ -37,7 +37,7 @@ This server allows you to access your FileHold documents via the WebDAV protocol
 To start the server, run:
 
 ```bash
-uvx webdav-server-for-filehold --filehold-url http://localhost/FH/FileHold/
+uvx webdav-server-for-filehold --filehold-url http://localhost/FH/FileHold/ -v
 ```
 
 ### Logging in
@@ -65,7 +65,7 @@ You can configure the server using the following command-line arguments:
 
 **Example:**
 ```bash
-webdav-server-for-filehold --port 9090 --filehold-url http://filehold.example.com/FH/FileHold/ --default_schema_name "Document"
+webdav-server-for-filehold --port 9090 --filehold-url http://filehold.example.com/FH/FileHold/ -v --default_schema_name "Document"
 ```
 
 ## Contributing
