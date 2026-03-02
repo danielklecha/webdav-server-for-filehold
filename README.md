@@ -1,7 +1,10 @@
 # WebDAV for FileHold (Community Tool)
 
 [![PyPI](https://img.shields.io/pypi/v/webdav-server-for-filehold)](https://pypi.org/project/webdav-server-for-filehold/)
+[![Python versions](https://img.shields.io/pypi/pyversions/webdav-server-for-filehold)](https://pypi.org/project/webdav-server-for-filehold/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/webdav-server-for-filehold?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/webdav-server-for-filehold)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/danielklecha/webdav-server-for-filehold/blob/master/LICENSE.txt)
+[![FileHold Compatibility](https://img.shields.io/badge/FileHold-16%20%7C%2017-blue)](https://www.filehold.com/)
 
 ## Disclaimer
 
