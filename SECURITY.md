@@ -2,7 +2,7 @@
 
 ## Disclaimer
 
-This is a community-developed, unofficial implementation and is **not** provided, supported, or endorsed by **FileHold Systems Inc.** or **Keymark**.
+This is a community-developed, unofficial implementation and is **not** provided, supported, or endorsed by **FileHold Systems ULC** or **Keymark**.
 
 ## Supported Versions
 
@@ -10,8 +10,8 @@ To minimize the risk of vulnerabilities when using this project, we recommend th
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+| 17.2.x  | :white_check_mark: |
+| < 17.2  | :x:                |
 
 ## Reporting a Vulnerability
 

@@ -2,7 +2,7 @@
 
 ## Disclaimer
 
-This is a community-developed, unofficial implementation and is **not** provided, supported, or endorsed by **FileHold Systems Inc.** or **Keymark**.
+This is a community-developed, unofficial implementation and is **not** provided, supported, or endorsed by **FileHold Systems ULC** or **Keymark**.
 
 ## Development
 

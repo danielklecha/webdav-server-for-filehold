@@ -9,10 +9,10 @@
 ## Disclaimer
 
 **Community Tool - Unofficial Implementation**
-This project is an independent, community-developed open-source software project. It is **not** provided, supported, endorsed by, sponsored by, or affiliated with **FileHold Systems Inc.** or **Keymark**.
+This project is an independent, community-developed open-source software project. It is **not** provided, supported, endorsed by, sponsored by, or affiliated with **FileHold Systems ULC** or **Keymark**.
 
 **Trademarks**
-"FileHold" and the FileHold logo are trademarks or registered trademarks of FileHold Systems Inc. in the United States, Canada, and/or other countries. All other trademarks cited herein are the property of their respective owners. Use of these names is for descriptive purposes only (nominative fair use) to indicate compatibility.
+"FileHold" and the FileHold logo are trademarks or registered trademarks of FileHold Systems ULC in the United States, Canada, and/or other countries. All other trademarks cited herein are the property of their respective owners. Use of these names is for descriptive purposes only (nominative fair use) to indicate compatibility.
 
 ## Features
 
